@@ -199,3 +199,44 @@ export const plaidItems = sqliteTable("plaid_items", {
 });
 
 export type PlaidItem = typeof plaidItems.$inferSelect;
+
+// ---------- Vera agent + decision layer ----------
+
+// Facts the user asked Vera to remember ("Sarah is my trusted contact").
+export const agentMemories = sqliteTable("agent_memories", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  fact: text("fact").notNull(),
+  source: text("source", { enum: ["user", "vera"] }).notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
+// Every action Vera proposes. Nothing runs until the user confirms it.
+export const agentActions = sqliteTable("agent_actions", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  tool: text("tool").notNull(),
+  params: text("params").notNull(), // JSON
+  summary: text("summary").notNull(), // the read-back the user confirms
+  status: text("status", { enum: ["pending", "executed", "cancelled", "failed", "expired"] }).notNull(),
+  result: text("result"),
+  channel: text("channel", { enum: ["voice", "chat"] }).notNull(),
+  createdAt: integer("created_at").notNull(),
+  resolvedAt: integer("resolved_at"),
+});
+
+// Audit trail for the decision layer: which engine decided what, how fast.
+export const decisions = sqliteTable("decisions", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  purpose: text("purpose").notNull(), // e.g. "agent_intent", "fraud_triage", "subscription_detect"
+  engine: text("engine", { enum: ["jev", "rules", "llm"] }).notNull(),
+  input: text("input").notNull(), // short human-readable summary
+  output: text("output").notNull(), // JSON
+  latencyMs: integer("latency_ms").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
+export type AgentMemory = typeof agentMemories.$inferSelect;
+export type AgentAction = typeof agentActions.$inferSelect;
+export type Decision = typeof decisions.$inferSelect;

@@ -151,6 +151,37 @@ const DDL = [
     content TEXT NOT NULL,
     created_at INTEGER NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS agent_memories (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    fact TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS agent_actions (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    tool TEXT NOT NULL,
+    params TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    status TEXT NOT NULL,
+    result TEXT,
+    channel TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    resolved_at INTEGER
+  )`,
+  `CREATE INDEX IF NOT EXISTS agent_actions_workspace ON agent_actions(workspace_id, created_at)`,
+  `CREATE TABLE IF NOT EXISTS decisions (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    purpose TEXT NOT NULL,
+    engine TEXT NOT NULL,
+    input TEXT NOT NULL,
+    output TEXT NOT NULL,
+    latency_ms INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS decisions_workspace ON decisions(workspace_id, created_at)`,
   `CREATE TABLE IF NOT EXISTS plaid_items (
     id TEXT PRIMARY KEY,
     workspace_id TEXT NOT NULL,
