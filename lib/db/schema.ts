@@ -184,3 +184,18 @@ export type UserCard = typeof userCards.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type AdvisorMessage = typeof advisorMessages.$inferSelect;
 export type PurchaseCheck = typeof purchaseChecks.$inferSelect;
+
+// Bank connections made through Plaid (sandbox). The access token never leaves the server.
+export const plaidItems = sqliteTable("plaid_items", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  itemId: text("item_id").notNull(),
+  accessToken: text("access_token").notNull(),
+  institutionName: text("institution_name").notNull(),
+  cursor: text("cursor"),
+  importedCount: integer("imported_count").notNull(),
+  createdAt: integer("created_at").notNull(),
+  lastSyncedAt: integer("last_synced_at"),
+});
+
+export type PlaidItem = typeof plaidItems.$inferSelect;

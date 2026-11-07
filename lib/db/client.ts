@@ -151,6 +151,17 @@ const DDL = [
     content TEXT NOT NULL,
     created_at INTEGER NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS plaid_items (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    item_id TEXT NOT NULL,
+    access_token TEXT NOT NULL,
+    institution_name TEXT NOT NULL,
+    cursor TEXT,
+    imported_count INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    last_synced_at INTEGER
+  )`,
   `CREATE TABLE IF NOT EXISTS purchase_checks (
     id TEXT PRIMARY KEY,
     workspace_id TEXT NOT NULL,

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeftRight, BrainCircuit, Camera, CreditCard, History, LayoutDashboard, Target } from "lucide-react";
+import { ArrowLeftRight, BrainCircuit, Camera, CreditCard, History, Landmark, LayoutDashboard, Target } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/app/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/app", label: "Subscriptions", icon: CreditCard },
   { href: "/app/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/app/goals", label: "Goals & Debt", icon: Target },
+  { href: "/app/banks", label: "Banks", icon: Landmark },
   { href: "/app/advisor", label: "AI Advisor", icon: BrainCircuit },
   { href: "/app/analyzer", label: "Purchase Analyzer", icon: Camera },
   { href: "/app/activity", label: "Activity", icon: History },
