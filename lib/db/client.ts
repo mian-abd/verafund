@@ -66,9 +66,31 @@ const DDL = [
 
 export type Db = LibSQLDatabase<typeof schema>;
 
-// TURSO_* are the names the Vercel Marketplace Turso integration injects.
+// DATABASE_URL wins. Otherwise use whatever libsql:// URL the Vercel Marketplace Turso
+// integration injected (TURSO_DATABASE_URL, or <PREFIX>_... with a custom prefix), and the
+// auth token that shares its prefix.
+function libsqlFromEnv(): { url: string; token: string | undefined } {
+  const explicit = process.env.DATABASE_URL?.trim();
+  if (explicit) return { url: explicit, token: process.env.DATABASE_AUTH_TOKEN || undefined };
+  const preferred = process.env.TURSO_DATABASE_URL ? "TURSO_DATABASE_URL" : undefined;
+  const key =
+    preferred ??
+    Object.keys(process.env)
+      .sort()
+      .find((k) => process.env[k]?.trim().startsWith("libsql://"));
+  if (!key) return { url: "", token: undefined };
+  const prefix = key.replace(/(_DATABASE)?_URL$/, "");
+  const token =
+    process.env[`${prefix}_AUTH_TOKEN`] ||
+    process.env[`${prefix}_DATABASE_AUTH_TOKEN`] ||
+    process.env.DATABASE_AUTH_TOKEN ||
+    process.env.TURSO_AUTH_TOKEN ||
+    undefined;
+  return { url: process.env[key]!.trim(), token };
+}
+
 function configuredUrl(): string {
-  return (process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || "").trim();
+  return libsqlFromEnv().url;
 }
 
 export function databaseKind(): "turso" | "file" {
@@ -93,7 +115,7 @@ export async function getDb(): Promise<Db> {
   if (!state) {
     const client = createClient({
       url: resolveUrl(),
-      authToken: process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN || undefined,
+      authToken: libsqlFromEnv().token,
     });
     const ready = client
       .batch(DDL, "write")
