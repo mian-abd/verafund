@@ -17,7 +17,7 @@ REPO="$(pwd -W 2>/dev/null || pwd)"
 MSYS_NO_PATHCONV=1 docker run --rm -t \
   -e SELDON_API_KEY="$KEY" \
   -v seldon-cli-cache:/usr/local/lib/node_modules \
-  -v "$REPO:/w" -w /w \
+  -v "$REPO:/verafund" -w /verafund \
   node:20-bookworm-slim sh -c '
     [ -x /usr/local/lib/node_modules/@seldonqa/cli/bin/seldon ] ||
       npm install -g --no-audit --no-fund @seldonqa/cli@0.14.2 >/dev/null 2>&1
