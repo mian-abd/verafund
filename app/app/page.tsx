@@ -5,6 +5,8 @@ import { ReturnTo, SubmitButton } from "@/components/ui";
 import { formatCents } from "@/lib/format";
 import { getDashboard } from "@/lib/guard";
 import { getWorkspaceId } from "@/lib/session";
+import { pickVeraAlert } from "@/lib/vera";
+import { VeraAlert } from "@/components/VeraAlert";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -74,6 +76,8 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
       </div>
 
       <ErrorBanner message={error} />
+
+      <VeraAlert alert={pickVeraAlert(subscriptions)} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Monthly spend guarded" value={formatCents(stats.monthlyCents)} />
