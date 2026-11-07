@@ -6,7 +6,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReturnTo, SubmitButton } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import { getWorkspace, workspaceNow } from "@/lib/guard";
-import { paymentsMode } from "@/lib/payments";
 import { agentLlmProvider, llmProvider, ollamaModel, ollamaStatus } from "@/lib/ai";
 import { getWorkspaceId } from "@/lib/session";
 import { getNotifications } from "@/lib/finance";
@@ -22,23 +21,6 @@ function Logo() {
         Vera<span className="text-muted-foreground font-medium">Fund</span>
       </span>
     </Link>
-  );
-}
-
-function ModeBadge() {
-  const stripe = paymentsMode() === "stripe";
-  return (
-    <span
-      data-testid="payments-mode"
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
-        stripe
-          ? "border-green-600/30 bg-green-600/10 text-green-700 dark:text-green-400"
-          : "border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-300"
-      }`}
-    >
-      <span className={`h-2 w-2 rounded-full ${stripe ? "bg-green-600" : "bg-amber-500"}`} aria-hidden="true" />
-      {stripe ? "Stripe Issuing · sandbox" : "Simulated · no payment network"}
-    </span>
   );
 }
 
@@ -116,7 +98,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <AppNav orientation="horizontal" />
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <ModeBadge />
             <AiBadge />
             <span className="text-sm text-muted-foreground" data-testid="demo-date">
               Today: <span className="font-medium text-foreground">{formatDate(now)}</span>
