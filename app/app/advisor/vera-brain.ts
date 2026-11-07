@@ -45,6 +45,8 @@ export interface Snapshot {
   goals: Array<{ name: string; targetCents: number; savedCents: number }>;
   debts: Array<{ name: string; kind: string; balanceCents: number; aprBps: number; minPaymentCents: number }>;
   subs: SubSummary[];
+  // Recent activity, so Vera can talk about specific charges and fraud alerts.
+  recent: Array<{ merchant: string; cents: number; category: string; status: string; at: number; risk: number | null }>;
 }
 
 export function buildSnapshot(finance: Finance, dashboard: Dashboard): Snapshot {
@@ -97,6 +99,12 @@ export function buildSnapshot(finance: Finance, dashboard: Dashboard): Snapshot 
         lastChargeCents: s.lastCharge?.amountCents ?? null,
         lastChargeApproved: s.lastCharge ? s.lastCharge.approved : null,
       })),
+    recent: [
+      ...finance.transactions.filter((t) => t.status === "flagged" || t.status === "blocked" || (t.riskScore ?? 0) >= 40).slice(0, 8),
+      ...finance.transactions.slice(0, 12),
+    ]
+      .filter((t, i, all) => all.findIndex((x) => x.id === t.id) === i)
+      .map((t) => ({ merchant: t.merchant, cents: t.amountCents, category: t.category, status: t.status, at: t.occurredAt, risk: t.riskScore })),
   };
 }
 
@@ -143,12 +151,31 @@ export function buildContext(s: Snapshot): string {
         .join("; ") || "none"
     }.`,
   );
+  lines.push(
+    `Recent transactions, newest first (negative = spending; "flagged" = Vera's fraud check is waiting on the user, "blocked" = declined): ${
+      s.recent
+        .map(
+          (t) =>
+            `${t.merchant} ${usd(t.cents)} ${t.category} ${t.status}${t.risk !== null ? ` risk ${t.risk}/100` : ""} on ${new Date(t.at).toISOString().slice(0, 10)}`,
+        )
+        .join("; ") || "none"
+    }.`,
+  );
   return lines.join("\n");
 }
 
-export function buildSystemPrompt(context: string): string {
+export interface AskOptions {
+  // Which page the user is on, so Vera can answer about what they are looking at.
+  page?: string;
+  // Spoken replies: short, no bullets.
+  voice?: boolean;
+}
+
+export function buildSystemPrompt(context: string, opts: AskOptions = {}): string {
   return [
     "You are Vera, the friendly personal-finance assistant inside VeraFund.",
+    ...(opts.page ? [`The user is currently looking at the ${opts.page} page of VeraFund.`] : []),
+    ...(opts.voice ? ["You are speaking out loud on a call: answer in 1-3 short spoken sentences, under 60 words, no bullets or symbols."] : []),
     "Answer using only the user's data below. Be concise (under 120 words) and specific with dollar amounts.",
     "Never invent numbers that are not in the data or derivable from it. Plain text only: no markdown headings; short sentences or simple '- ' bullets are fine.",
     "If asked for investment picks or tax/legal advice, say you are not a licensed advisor and keep to budgeting.",
@@ -297,10 +324,11 @@ export async function answerQuestion(
   question: string,
   history: ChatTurn[],
   snapshot: Snapshot,
+  opts: AskOptions = {},
 ): Promise<{ text: string; ai: boolean }> {
   if (aiEnabled()) {
     try {
-      const text = await askClaude(buildSystemPrompt(buildContext(snapshot)), [...history, { role: "user", content: question }], 600);
+      const text = await askClaude(buildSystemPrompt(buildContext(snapshot), opts), [...history, { role: "user", content: question }], opts.voice ? 200 : 600);
       return { text, ai: true };
     } catch (err) {
       console.error("[advisor] AI call failed, using rule-based answer:", err instanceof Error ? err.message : "unknown error");

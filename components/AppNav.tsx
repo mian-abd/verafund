@@ -10,9 +10,9 @@ const NAV_ITEMS = [
   { href: "/app/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/app/goals", label: "Goals & Debt", icon: Target },
   { href: "/app/banks", label: "Banks", icon: Landmark },
-  { href: "/app/advisor", label: "AI Advisor", icon: BrainCircuit },
   { href: "/app/analyzer", label: "Purchase Analyzer", icon: Camera },
   { href: "/app/activity", label: "Activity", icon: History },
+  { href: "/app/advisor", label: "AI Advisor", icon: BrainCircuit },
 ];
 
 export function AppNav({ orientation }: { orientation: "vertical" | "horizontal" }) {

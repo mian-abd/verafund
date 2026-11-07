@@ -11,6 +11,7 @@ import { getWorkspaceId } from "@/lib/session";
 import { getNotifications } from "@/lib/finance";
 import { formatDateTime } from "@/lib/format";
 import { NotificationBell } from "@/components/NotificationBell";
+import { VeraDock } from "@/components/VeraDock";
 
 function Logo() {
   return (
@@ -107,7 +108,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 pb-24 md:p-6 md:pb-24">{children}</main>
+        <VeraDock />
       </div>
     </div>
   );
