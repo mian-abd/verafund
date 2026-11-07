@@ -33,6 +33,18 @@ export function stripPreamble(text: string): string {
 }
 
 // "my netflix subscription" -> "netflix"
+// Vera asked a follow-up about a new card ("Which company is the new card for?"); fold the
+// short reply into a full command so "Claude, $20 a month" finishes the request.
+export function continueCreateCard(reply: string, lastAssistant: string | undefined): string | null {
+  if (!lastAssistant) return null;
+  const answer = reply.trim().replace(/^(?:it'?s\s+|its\s+|for\s+|the\s+)/i, "").replace(/[.!?]+$/, "");
+  if (!answer || answer.split(/\s+/).length > 12) return null;
+  if (/^Which company is the new card for\?/.test(lastAssistant)) return `create a card for ${answer}`;
+  const howMuch = lastAssistant.match(/^How much should the (.+?) card be allowed to charge each month\?/);
+  if (howMuch && /\d/.test(answer)) return `create a card for ${howMuch[1]} at ${answer.startsWith("$") ? answer : `$${answer}`}`;
+  return null;
+}
+
 function cleanRest(rest: string): string {
   return rest
     .replace(/^(?:the\s+card\s+for\s+|my\s+|the\s+|our\s+|that\s+|this\s+|a\s+|an\s+)+/, "")
@@ -169,6 +181,31 @@ export function matchPreset(text: string, ctx: PresetCtx): PresetMatch | null {
     const sub = hit ? ctx.subs.find((s) => s.merchant === hit) : undefined;
     const trialWord = /\btrial\b/.test(q);
     if (sub || trialWord) return tool("keep_after_trial", hit ? { merchant: hit } : {}, "keep after trial");
+  }
+
+  // ----- new cards -----
+  const newCard =
+    q.match(/^(?:create|make|add|set\s+up|open|issue|get(?:\s+me)?|give\s+me|i\s+(?:want|need))\s+(?:me\s+)?(?:a\s+|an\s+)?(?:new\s+)?(?:virtual\s+|guarded\s+|separate\s+)?card(?:\s+(?:for|to\s+use\s+(?:for|with)|on)\s+(.+))?$/) ??
+    q.match(/^(?:add|track|start\s+guarding|i\s+(?:just\s+)?(?:got|signed\s+up\s+for|subscribed\s+to))\s+(?:a\s+new\s+|my\s+new\s+|my\s+|a\s+|an\s+)?(.+?)\s+(?:subscription|membership|plan)\b.*$/) ??
+    q.match(/^(?:new|another)\s+(?:virtual\s+)?card\s+for\s+(.+)$/);
+  if (newCard) {
+    const rest = (newCard[1] ?? "")
+      .replace(/\s*(?:,\s*)?(?:at|for|with|of|costing|that\s+costs|which\s+costs|limited\s+to|limit|capped\s+at)?\s*\$?\d[\d,.]*\s*(?:dollars?|bucks|usd)?\b.*$/, "")
+      .replace(/\s+(?:a|per|each)\s+(?:month|year)\b.*$/, "")
+      .replace(/\s+with\s+(?:a\s+)?\d+[-\s]day.*$/, "")
+      .replace(/(?:\s+(?:with|at|for|and|of|limited\s+to|capped\s+at)(?:\s+(?:a|an|the))?)+\s*$/, "");
+    const merchant = cleanRest(rest);
+    const dollars = extractDollars(original, { allowBare: true });
+    const trial = q.match(/\b(\d{1,2})[-\s]day\s+(?:free\s+)?trial\b/);
+    return tool(
+      "create_card",
+      {
+        ...(merchant ? { merchant } : {}),
+        ...(dollars !== null ? { monthly_limit_dollars: dollars } : {}),
+        ...(trial ? { trial_days: Number(trial[1]) } : {}),
+      },
+      "create card",
+    );
   }
 
   // ----- money -----

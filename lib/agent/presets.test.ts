@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildHints } from "./hints";
-import { matchPreset, stripPreamble } from "./presets";
+import { continueCreateCard, matchPreset, stripPreamble } from "./presets";
 import { testCtx, testSub } from "./testctx";
 import type { ToolName } from "./types";
 import { validateAction } from "./validate";
@@ -115,7 +115,7 @@ describe("preset commands: money", () => {
 
   it("does not treat 'save' without a goal as a goal action", () => {
     expect(matchPreset("save money on groceries", ctx)).toBeNull();
-    expect(matchPreset("add a card for hulu", ctx)).toBeNull();
+    expect(tool("add a card for hulu")).toEqual({ tool: "create_card", raw: { merchant: "hulu" } });
   });
 
   it("pays a debt by name or kind", () => {
@@ -232,5 +232,32 @@ describe("Try saying hints", () => {
         expect(validateAction(m.tool, m.raw, rich), hint).toMatchObject({ ok: true });
       }
     }
+  });
+});
+
+describe("new card preset", () => {
+  it("creates a card with merchant and amount", () => {
+    expect(tool("create a card for Claude at $20 a month")).toEqual({ tool: "create_card", raw: { merchant: "claude", monthly_limit_dollars: 20 } });
+    expect(tool("Vera, make me a new virtual card for ChatGPT, $20")).toMatchObject({ tool: "create_card", raw: { merchant: "chatgpt", monthly_limit_dollars: 20 } });
+    expect(tool("add my Claude subscription, it's $20 a month")).toMatchObject({ tool: "create_card", raw: { merchant: "claude", monthly_limit_dollars: 20 } });
+    expect(tool("I just signed up for a Duolingo subscription with a 7-day free trial for $12.99")).toMatchObject({
+      tool: "create_card",
+      raw: { merchant: "duolingo", monthly_limit_dollars: 12.99, trial_days: 7 },
+    });
+  });
+
+  it("asks for what's missing", () => {
+    expect(tool("create a new virtual card")).toEqual({ tool: "create_card", raw: {} });
+    expect(tool("make a card for Claude")).toEqual({ tool: "create_card", raw: { merchant: "claude" } });
+  });
+
+  it("finishes the request from a short follow-up", () => {
+    expect(continueCreateCard("for my Claude subscription", "Which company is the new card for?")).toBe("create a card for my Claude subscription");
+    expect(tool(continueCreateCard("for my Claude subscription", "Which company is the new card for?")!)).toMatchObject({ tool: "create_card", raw: { merchant: "claude" } });
+    expect(tool(continueCreateCard("20 dollars", "How much should the Claude card be allowed to charge each month?")!)).toMatchObject({
+      tool: "create_card",
+      raw: { merchant: "claude", monthly_limit_dollars: 20 },
+    });
+    expect(continueCreateCard("pause Spotify", "Here's your spending.")).toBeNull();
   });
 });

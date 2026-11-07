@@ -11,6 +11,26 @@ type Msg = { id: string; role: "user" | "assistant"; content: string; card?: Car
 type CallState = "idle" | "listening" | "thinking" | "speaking";
 
 const OFFLINE_LABEL = "Rule-based answer (AI offline)";
+const SPOKEN_MAX = 320;
+
+// On a call, long answers (lists, tables) are tiring to hear. Speak the first couple of
+// sentences and leave the full answer on screen.
+function spokenVersion(text: string): string {
+  const plain = text
+    .replace(/\*\*/g, "")
+    .replace(/^\s*[-•*]\s+/gm, "")
+    .replace(/\s*\n+\s*/g, ". ")
+    .replace(/\.\s*\./g, ".")
+    .trim();
+  if (plain.length <= SPOKEN_MAX) return plain;
+  const sentences = plain.match(/[^.!?]+[.!?]+/g) ?? [plain];
+  let out = "";
+  for (const s of sentences) {
+    if ((out + s).length > SPOKEN_MAX) break;
+    out += s;
+  }
+  return `${(out || plain.slice(0, SPOKEN_MAX)).trim()} The rest is on your screen.`;
+}
 
 const CHIPS: Record<string, string[]> = {
   "/app": ["Which subscriptions should I cancel?", "Did any subscription try to raise its price?"],
@@ -136,7 +156,21 @@ export function VeraDock() {
   const callRef = useRef<CallState>("idle");
   const recRef = useRef<Recognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Each spoken answer gets a turn number; a newer message cancels anything older.
+  const speakTurnRef = useRef(0);
+  const speakDoneRef = useRef<(() => void) | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Stops whatever Vera is saying and lets the call loop move on.
+  const stopSpeaking = useCallback(() => {
+    speakTurnRef.current += 1;
+    audioRef.current?.pause();
+    audioRef.current = null;
+    if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    const done = speakDoneRef.current;
+    speakDoneRef.current = null;
+    done?.();
+  }, []);
   // The action Vera is waiting on a spoken yes/no for, and how many times we couldn't tell.
   const pendingRef = useRef<string | null>(null);
   const unclearRef = useRef(0);
@@ -251,6 +285,7 @@ export function VeraDock() {
     async (message: string, voice = false): Promise<string | null> => {
       const q = message.trim();
       if (!q) return null;
+      stopSpeaking(); // a new message always interrupts the previous answer
       setError(null);
       setBusy(true);
       setMessages((m) => [...m, { id: `local-${Date.now()}`, role: "user", content: q }]);
@@ -263,7 +298,7 @@ export function VeraDock() {
         setBusy(false);
       }
     },
-    [pathname, post, applyReply],
+    [pathname, post, applyReply, stopSpeaking],
   );
 
   // A tap on Yes / No.
@@ -325,10 +360,13 @@ export function VeraDock() {
   );
 
   const speak = useCallback(async (text: string) => {
-    const plain = text.replace(OFFLINE_LABEL, "").replace(/\*\*/g, "");
+    stopSpeaking();
+    const plain = spokenVersion(text.replace(OFFLINE_LABEL, ""));
+    const turn = ++speakTurnRef.current;
     const viaBrowser = () =>
       new Promise<void>((resolve) => {
-        if (!("speechSynthesis" in window)) return resolve();
+        if (!("speechSynthesis" in window) || turn !== speakTurnRef.current) return resolve();
+        speakDoneRef.current = resolve;
         const u = new SpeechSynthesisUtterance(plain);
         u.onend = () => resolve();
         u.onerror = () => resolve();
@@ -341,9 +379,13 @@ export function VeraDock() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: plain }),
       });
+      // A newer message arrived while the audio was loading: don't play the stale answer.
+      if (turn !== speakTurnRef.current) return;
       if (res.status !== 200) return viaBrowser();
       const url = URL.createObjectURL(await res.blob());
+      if (turn !== speakTurnRef.current) return;
       await new Promise<void>((resolve) => {
+        speakDoneRef.current = resolve;
         const audio = new Audio(url);
         audioRef.current = audio;
         audio.onended = () => resolve();
@@ -353,7 +395,7 @@ export function VeraDock() {
     } catch {
       await viaBrowser();
     }
-  }, []);
+  }, [stopSpeaking]);
 
   const listenOnce = useCallback(() => {
     const Ctor = recognitionCtor();
@@ -414,8 +456,7 @@ export function VeraDock() {
   const endCall = () => {
     setCallState("idle");
     recRef.current?.abort();
-    audioRef.current?.pause();
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    stopSpeaking();
   };
 
   useEffect(() => endCall, []);
@@ -505,6 +546,16 @@ export function VeraDock() {
             <div className="flex items-center gap-2 border-b border-border bg-primary/5 px-4 py-2 text-sm text-foreground" role="status">
               <Mic size={14} aria-hidden="true" className={call === "listening" ? "animate-pulse text-primary" : "text-muted-foreground"} />
               {callLabel} <span className="text-xs text-muted-foreground">Say “bye” to hang up.</span>
+              {call === "speaking" && (
+                <button
+                  type="button"
+                  onClick={stopSpeaking}
+                  data-testid="vera-skip"
+                  className="ml-auto rounded-full border border-border px-3 py-0.5 text-xs font-medium hover:bg-muted"
+                >
+                  Skip
+                </button>
+              )}
             </div>
           )}
 

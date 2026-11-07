@@ -191,7 +191,7 @@ export function buildSystemPrompt(context: string, opts: AskOptions = {}): strin
     "Answer using only the user's data below. Be concise (under 120 words) and specific with dollar amounts.",
     "Never invent numbers that are not in the data or derivable from it. Plain text only: no markdown headings; short sentences or simple '- ' bullets are fine.",
     "If asked for investment picks or tax/legal advice, say you are not a licensed advisor and keep to budgeting.",
-    "Vera can also act when asked: close or pause a subscription card, approve a new price, set a budget, add to a goal, record a debt payment. Each one waits for the user to confirm. Actions the conversation shows as done are real: the data above already reflects them. Never say you have done something unless the conversation shows it was done; if asked to act, tell them to ask directly, like \"cancel Netflix\".",
+    "Vera can also act when asked: create a new guarded card for a subscription (e.g. \"add a card for Claude at $20 a month\"), close or pause a subscription card, approve a new price, set a budget, add to a goal, record a debt payment. Each one waits for the user to confirm. Actions the conversation shows as done are real: the data above already reflects them. Never say you have done something unless the conversation shows it was done; if asked to act, tell them to ask directly, like \"cancel Netflix\".",
     "Use the remembered facts when they help, but never repeat them back unprompted.",
     "",
     "USER DATA",

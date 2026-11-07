@@ -21,7 +21,7 @@ import { executeAction, type Via } from "./execute";
 import { decideConfirmation, routeIntent } from "./intent";
 import { agentProvider, llmToolCall } from "./llm";
 import { addMemory, forgetMemories, listMemories } from "./memory";
-import { matchPreset } from "./presets";
+import { continueCreateCard, matchPreset } from "./presets";
 import {
   cancelPendingAction,
   claimAction,
@@ -287,7 +287,9 @@ async function runAgent(workspaceId: string, message: string, opts: AgentOpts, s
 
   // Preset commands come first: plain pattern matching, no network call, so they are instant.
   const presetStarted = Date.now();
-  const preset = matchPreset(message, ctx);
+  const lastAssistant = [...turns].reverse().find((t) => t.role === "assistant")?.content;
+  const followUp = continueCreateCard(message, lastAssistant);
+  const preset = matchPreset(followUp ?? message, ctx);
   if (preset) {
     await logDecision({
       workspaceId,
