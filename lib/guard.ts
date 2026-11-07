@@ -8,6 +8,7 @@ import { seedFinance } from "./finance-seed";
 import {
   accounts,
   charges,
+  notifications,
   policyEvents,
   subscriptions,
   transactions,
@@ -196,6 +197,15 @@ async function lockTrialIfEnded(db: Db, sub: Subscription, now: number): Promise
     sub.trialEndsAt,
     "system",
   );
+  await db.insert(notifications).values({
+    id: randomUUID(),
+    workspaceId: sub.workspaceId,
+    kind: "trial_locked",
+    title: `${sub.merchant} free trial ended`,
+    body: `Card ••${sub.cardLast4} is locked, so the trial can't turn into a ${formatCents(sub.amountCents)}/${cycleLabel(sub.cycle)} plan without you.`,
+    read: false,
+    createdAt: Date.now(),
+  });
   return { ...sub, status: "trial_ended", cardStatus: "inactive" };
 }
 
@@ -246,6 +256,18 @@ export async function simulateCharge(workspaceId: string, subscriptionId: string
     resolution: null,
     createdAt: Date.now(),
   });
+
+  if (!decision.approved) {
+    await db.insert(notifications).values({
+      id: randomUUID(),
+      workspaceId,
+      kind: decision.reason ?? "declined",
+      title: `Blocked ${formatCents(amountCents)} from ${sub.merchant}`,
+      body: decision.text,
+      read: false,
+      createdAt: Date.now(),
+    });
+  }
 
   // Mirror the attempt into the transaction history so it shows on the dashboard.
   const [card] = await db

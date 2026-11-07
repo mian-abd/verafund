@@ -8,6 +8,9 @@ import { formatDate } from "@/lib/format";
 import { getWorkspace, workspaceNow } from "@/lib/guard";
 import { paymentsMode } from "@/lib/payments";
 import { getWorkspaceId } from "@/lib/session";
+import { getNotifications } from "@/lib/finance";
+import { formatDateTime } from "@/lib/format";
+import { NotificationBell } from "@/components/NotificationBell";
 
 function Logo() {
   return (
@@ -43,6 +46,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const workspace = await getWorkspace(workspaceId);
   if (!workspace) redirect("/?expired=1");
   const now = workspaceNow(workspace);
+  const bellItems = (await getNotifications(workspaceId)).map((n) => ({
+    id: n.id,
+    kind: n.kind,
+    title: n.title,
+    body: n.body,
+    read: n.read,
+    when: formatDateTime(n.createdAt),
+  }));
+  const bell = <NotificationBell items={bellItems} />;
 
   return (
     <div className="min-h-screen bg-background md:flex">
@@ -61,7 +73,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <header className="border-b border-border bg-card px-4 md:px-6 py-3 space-y-3 md:space-y-0 md:flex md:items-center md:justify-between md:gap-4">
           <div className="flex items-center justify-between gap-3 md:hidden">
             <Logo />
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              {bell}
+              <ThemeToggle />
+            </div>
           </div>
           <div className="md:hidden">
             <AppNav orientation="horizontal" />
@@ -85,7 +100,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 Start over
               </SubmitButton>
             </form>
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-2">
+              {bell}
               <ThemeToggle />
             </div>
           </div>

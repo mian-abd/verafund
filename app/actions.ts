@@ -18,6 +18,9 @@ import {
 } from "@/lib/guard";
 import { parseDollarsToCents } from "@/lib/format";
 import { getWorkspaceId, setWorkspaceId } from "@/lib/session";
+import { getDb } from "@/lib/db/client";
+import { notifications } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 function userMessage(err: unknown): string {
   if (err instanceof GuardError) return err.message;
@@ -127,4 +130,11 @@ export async function addSubscriptionAction(formData: FormData) {
 
 export async function resetDemoAction() {
   await startDemo();
+}
+
+export async function markNotificationsReadAction(formData: FormData) {
+  await run(formData, async (ws) => {
+    const db = await getDb();
+    await db.update(notifications).set({ read: true }).where(eq(notifications.workspaceId, ws));
+  });
 }

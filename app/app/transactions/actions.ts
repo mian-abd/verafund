@@ -1,0 +1,160 @@
+"use server";
+
+import { randomUUID } from "node:crypto";
+import { and, eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { PURCHASE_CATEGORIES } from "@/components/transactions/options";
+import { getDb } from "@/lib/db/client";
+import { notifications, transactions } from "@/lib/db/schema";
+import { getFinance } from "@/lib/finance";
+import { scorePurchase, parseRiskSignals, severityOf, type RiskSignal } from "@/lib/fraud";
+import { formatCents, parseDollarsToCents } from "@/lib/format";
+import { GuardError, WorkspaceMissingError } from "@/lib/guard";
+import { jevTriage } from "@/lib/jev";
+import { getWorkspaceId } from "@/lib/session";
+
+const BACK = "/app/transactions";
+
+function userMessage(err: unknown): string {
+  if (err instanceof GuardError) return err.message;
+  return "Something went wrong. Try again, or start over.";
+}
+
+// Runs a workspace-scoped mutation, then sends the user back to the page.
+// A user error comes back as persistent text on that page via ?error=.
+async function run(mutate: (workspaceId: string) => Promise<void>) {
+  const workspaceId = await getWorkspaceId();
+  if (!workspaceId) redirect("/?expired=1");
+
+  let error: string | null = null;
+  try {
+    await mutate(workspaceId);
+  } catch (err) {
+    if (err instanceof WorkspaceMissingError) redirect("/?expired=1");
+    console.error("[transactions action]", err);
+    error = userMessage(err);
+  }
+  revalidatePath("/app", "layout");
+  redirect(error ? `${BACK}?error=${encodeURIComponent(error)}` : BACK);
+}
+
+function text(formData: FormData, name: string): string {
+  const value = formData.get(name);
+  return typeof value === "string" ? value.trim() : "";
+}
+
+export async function simulatePurchaseAction(formData: FormData) {
+  await run(async (workspaceId) => {
+    const merchant = text(formData, "merchant");
+    if (!merchant || merchant.length > 80) throw new GuardError("Enter a merchant name (up to 80 characters).");
+
+    const amountCents = parseDollarsToCents(text(formData, "amount"));
+    if (amountCents === null) throw new GuardError("Enter an amount like 18.99 (between $0.01 and $10,000).");
+
+    const category = PURCHASE_CATEGORIES.find((c) => c === text(formData, "category").toLowerCase());
+    if (!category) throw new GuardError("Pick a category from the list.");
+
+    const country = (text(formData, "country") || "US").toUpperCase();
+    if (!/^[A-Z]{2}$/.test(country)) throw new GuardError("Enter a two-letter country code like US.");
+
+    const finance = await getFinance(workspaceId);
+    const checking = finance.accounts.find((a) => a.type === "checking") ?? finance.accounts[0];
+    if (!checking) throw new GuardError("No account to charge. Start over to reset your workspace.");
+
+    const purchase = { merchant, amountCents, category, country, at: finance.now };
+    const result = scorePurchase(purchase, {
+      history: finance.transactions,
+      checkingBalanceCents: finance.accounts.find((a) => a.type === "checking")?.balanceCents ?? null,
+    });
+
+    // Jev adds advisory evidence with 0 points; the rule score alone sets the status.
+    const evidence: RiskSignal[] = await jevTriage(purchase, result.signals, result.score);
+    const signals = [...result.signals, ...evidence];
+    const flagged = result.severity === "high";
+
+    const db = await getDb();
+    await db.insert(transactions).values({
+      id: randomUUID(),
+      workspaceId,
+      accountId: checking.id,
+      merchant,
+      category,
+      amountCents: -amountCents,
+      occurredAt: finance.now,
+      description: `Card purchase in ${country}`,
+      status: flagged ? "flagged" : "posted",
+      riskScore: result.score,
+      riskSignals: JSON.stringify(signals),
+      subscriptionId: null,
+      createdAt: Date.now(),
+    });
+
+    if (flagged) {
+      const why = result.signals.slice(0, 3).map((s) => s.detail).join(" ");
+      await db.insert(notifications).values({
+        id: randomUUID(),
+        workspaceId,
+        kind: "fraud_flagged",
+        title: `Vera flagged a ${formatCents(amountCents)} charge at ${merchant}`,
+        body: `Risk score ${result.score}/100. ${why}`,
+        read: false,
+        createdAt: Date.now(),
+      });
+    }
+  });
+}
+
+export async function resolveFlaggedAction(formData: FormData) {
+  await run(async (workspaceId) => {
+    const id = text(formData, "transactionId");
+    const decision = text(formData, "decision");
+    if (!id || (decision !== "yes" && decision !== "no")) throw new GuardError("That answer didn't come through. Try again.");
+
+    const db = await getDb();
+    const [tx] = await db
+      .select()
+      .from(transactions)
+      .where(and(eq(transactions.id, id), eq(transactions.workspaceId, workspaceId)));
+    if (!tx) throw new GuardError("That transaction doesn't exist in your workspace.");
+    if (tx.status !== "flagged") throw new GuardError("You already answered this charge.");
+
+    const amountCents = Math.abs(tx.amountCents);
+
+    if (decision === "yes") {
+      const before = tx.riskScore ?? 0;
+      const after = Math.round(before * 0.3);
+      const signals: RiskSignal[] = [
+        ...parseRiskSignals(tx.riskSignals),
+        {
+          signal: "user_confirmed",
+          points: after - before,
+          detail: `You told Vera this purchase was yours, so the risk dropped from ${before} to ${after}.`,
+        },
+      ];
+      const done = await db
+        .update(transactions)
+        .set({ status: "posted", riskScore: after, riskSignals: JSON.stringify(signals) })
+        .where(and(eq(transactions.id, id), eq(transactions.workspaceId, workspaceId), eq(transactions.status, "flagged")))
+        .returning({ id: transactions.id });
+      if (done.length === 0) throw new GuardError("You already answered this charge.");
+      return;
+    }
+
+    const done = await db
+      .update(transactions)
+      .set({ status: "blocked" })
+      .where(and(eq(transactions.id, id), eq(transactions.workspaceId, workspaceId), eq(transactions.status, "flagged")))
+      .returning({ id: transactions.id });
+    if (done.length === 0) throw new GuardError("You already answered this charge.");
+    await db.insert(notifications).values({
+      id: randomUUID(),
+      workspaceId,
+      kind: "fraud_blocked",
+      title: `Vera blocked a ${formatCents(amountCents)} charge at ${tx.merchant}`,
+      body: `You said it wasn't you, so the ${severityOf(tx.riskScore ?? 0)}-risk charge was blocked and no money moved.`,
+      read: false,
+      createdAt: Date.now(),
+    });
+  });
+}
