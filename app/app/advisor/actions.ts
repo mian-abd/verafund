@@ -7,7 +7,7 @@ import { getDb } from "@/lib/db/client";
 import { advisorMessages } from "@/lib/db/schema";
 import { GuardError, WorkspaceMissingError } from "@/lib/guard";
 import { getWorkspaceId } from "@/lib/session";
-import { askVera } from "@/lib/vera-chat";
+import { handleAgentMessage } from "@/lib/agent/flow";
 
 const BACK = "/app/advisor";
 
@@ -18,7 +18,9 @@ export async function askVeraAction(formData: FormData) {
   const raw = formData.get("message");
   let error: string | null = null;
   try {
-    await askVera(workspaceId, typeof raw === "string" ? raw : "", { page: "AI Advisor" });
+    // Questions are answered as before; "cancel Netflix"-style requests become a pending action
+    // the user confirms under "Vera's actions" on this page.
+    await handleAgentMessage(workspaceId, typeof raw === "string" ? raw : "", { page: "AI Advisor", surface: "advisor" });
   } catch (err) {
     if (err instanceof WorkspaceMissingError) redirect("/?expired=1");
     if (err instanceof GuardError) error = err.message;

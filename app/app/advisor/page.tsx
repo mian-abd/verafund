@@ -1,6 +1,9 @@
 import { asc, eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { ActionsPanel } from "@/components/advisor/ActionsPanel";
 import { ChatPanel } from "@/components/advisor/ChatPanel";
+import { listMemories } from "@/lib/agent/memory";
+import { listRecentActions } from "@/lib/agent/store";
 import { aiEnabled } from "@/lib/ai";
 import { getDb } from "@/lib/db/client";
 import { advisorMessages } from "@/lib/db/schema";
@@ -21,6 +24,9 @@ export default async function AdvisorPage({ searchParams }: { searchParams: Prom
     .where(eq(advisorMessages.workspaceId, workspaceId))
     .orderBy(asc(advisorMessages.createdAt), asc(sql`rowid`));
 
+  const [actionRows, memories] = await Promise.all([listRecentActions(workspaceId, 15), listMemories(workspaceId)]);
+  const actions = actionRows.map((a) => ({ ...a, time: formatDateTime(a.createdAt) }));
+
   const messages = rows.map((m) => ({
     id: m.id,
     role: m.role,
@@ -33,7 +39,7 @@ export default async function AdvisorPage({ searchParams }: { searchParams: Prom
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">AI Advisor</h1>
         <p className="text-sm text-muted-foreground">
-          Ask Vera about affording something, your budget, debt or subscriptions. Answers use your real numbers.
+          Ask Vera about affording something, your budget, debt or subscriptions. Answers use your real numbers. She can also act for you: try “cancel Netflix”.
         </p>
       </div>
 
@@ -44,6 +50,8 @@ export default async function AdvisorPage({ searchParams }: { searchParams: Prom
       )}
 
       <ChatPanel messages={messages} aiOnline={aiEnabled()} />
+
+      <ActionsPanel actions={actions} memories={memories} />
 
       <p className="text-xs text-muted-foreground">
         Vera gives budgeting guidance based on your data in VeraFund. It is not professional financial advice.

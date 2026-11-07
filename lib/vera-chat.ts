@@ -1,18 +1,21 @@
 // One conversation with Vera per workspace, shared by the AI Advisor page and the
-// floating "Ask Vera" panel on every page.
+// floating "Ask Vera" panel on every page. Questions land here; requests to DO something go
+// through the action agent in lib/agent/flow.ts, which calls back into askVera for anything
+// that is just a question.
 
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, gte } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import type { ChatTurn } from "./ai";
+import { assertUnderHourlyLimit, MAX_QUESTION as MAX_QUESTION_CHARS } from "./agent/chatlog";
+import { listMemoryFacts } from "./agent/memory";
 import { getDb } from "./db/client";
 import { advisorMessages } from "./db/schema";
 import { getFinance } from "./finance";
 import { getDashboard, GuardError } from "./guard";
 import { answerQuestion, buildSnapshot, type AskOptions } from "@/app/app/advisor/vera-brain";
 
-export const MAX_QUESTION = 500;
+export const MAX_QUESTION = MAX_QUESTION_CHARS;
 const HISTORY_TURNS = 10;
-const HOURLY_LIMIT = 40; // the site is public and AI calls cost money
 
 export async function askVera(workspaceId: string, rawQuestion: string, opts: AskOptions = {}) {
   const question = rawQuestion.trim();
@@ -20,19 +23,13 @@ export async function askVera(workspaceId: string, rawQuestion: string, opts: As
   if (question.length > MAX_QUESTION) throw new GuardError(`Keep questions under ${MAX_QUESTION} characters.`);
 
   const db = await getDb();
-  const recent = await db
-    .select({ id: advisorMessages.id })
-    .from(advisorMessages)
-    .where(
-      and(
-        eq(advisorMessages.workspaceId, workspaceId),
-        eq(advisorMessages.role, "user"),
-        gte(advisorMessages.createdAt, Date.now() - 3_600_000),
-      ),
-    );
-  if (recent.length >= HOURLY_LIMIT) throw new GuardError("Vera needs a short break. Try again in a few minutes.");
+  await assertUnderHourlyLimit(workspaceId);
 
-  const [finance, dashboard] = await Promise.all([getFinance(workspaceId), getDashboard(workspaceId)]);
+  const [finance, dashboard, memories] = await Promise.all([
+    getFinance(workspaceId),
+    getDashboard(workspaceId),
+    listMemoryFacts(workspaceId),
+  ]);
   const prior = await db
     .select()
     .from(advisorMessages)
@@ -44,7 +41,7 @@ export async function askVera(workspaceId: string, rawQuestion: string, opts: As
   // Wall-clock timestamps keep the shared history in order across both chat surfaces.
   const askedAt = Date.now();
   await db.insert(advisorMessages).values({ id: randomUUID(), workspaceId, role: "user", content: question, createdAt: askedAt });
-  const answer = await answerQuestion(question, history, buildSnapshot(finance, dashboard), opts);
+  const answer = await answerQuestion(question, history, buildSnapshot(finance, dashboard, memories), opts);
   await db.insert(advisorMessages).values({
     id: randomUUID(),
     workspaceId,

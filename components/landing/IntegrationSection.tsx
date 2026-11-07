@@ -8,10 +8,10 @@ const STACK = [
   { icon: CreditCard, name: "Stripe Issuing", role: "Virtual cards with per-charge spending limits" },
   { icon: Landmark, name: "Plaid", role: "Bank connections and transaction import" },
   { icon: BrainCircuit, name: "Claude", role: "Vera’s answers and receipt and photo reading" },
-  { icon: Workflow, name: "TypeSafe Jev", role: "Fast typed decisions: fraud triage in ~0.4s" },
+  { icon: Workflow, name: "TypeSafe Jev", role: "Typed decisions in milliseconds: fraud triage, subscription checks, what you asked Vera to do" },
   { icon: Mic, name: "ElevenLabs", role: "Vera’s voice for alerts and calls" },
   { icon: Database, name: "Turso / SQLite", role: "The same database in the cloud or on-device" },
-  { icon: Cpu, name: "NVIDIA Jetson", role: "Self-hosted VeraFund on hardware you own" },
+  { icon: Cpu, name: "NVIDIA Jetson", role: "Self-hosted, with Vera’s actions on a local model on the GPU" },
   { icon: ShieldCheck, name: "Seldon Wren", role: "AI QA agent testing the core flows" },
 ];
 

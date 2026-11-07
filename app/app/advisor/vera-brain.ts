@@ -45,11 +45,15 @@ export interface Snapshot {
   goals: Array<{ name: string; targetCents: number; savedCents: number }>;
   debts: Array<{ name: string; kind: string; balanceCents: number; aprBps: number; minPaymentCents: number }>;
   subs: SubSummary[];
+  // Cards the user (or Vera, on their confirmation) closed: no longer charged, no longer in `subs`.
+  closedSubs: string[];
+  // Facts the user asked Vera to remember ("Sarah is my trusted contact").
+  memories: string[];
   // Recent activity, so Vera can talk about specific charges and fraud alerts.
   recent: Array<{ merchant: string; cents: number; category: string; status: string; at: number; risk: number | null }>;
 }
 
-export function buildSnapshot(finance: Finance, dashboard: Dashboard): Snapshot {
+export function buildSnapshot(finance: Finance, dashboard: Dashboard, memories: string[] = []): Snapshot {
   const since = startOfMonth(finance.now);
   const spent = spendByCategory(finance.transactions, since);
   const merchants: Record<string, Record<string, number>> = {};
@@ -87,6 +91,7 @@ export function buildSnapshot(finance: Finance, dashboard: Dashboard): Snapshot 
       aprBps: d.aprBps,
       minPaymentCents: d.minPaymentCents,
     })),
+    closedSubs: dashboard.subscriptions.filter((s) => s.status === "cancelled").map((s) => s.merchant),
     subs: dashboard.subscriptions
       .filter((s) => s.status !== "cancelled")
       .map((s) => ({
@@ -99,6 +104,7 @@ export function buildSnapshot(finance: Finance, dashboard: Dashboard): Snapshot 
         lastChargeCents: s.lastCharge?.amountCents ?? null,
         lastChargeApproved: s.lastCharge ? s.lastCharge.approved : null,
       })),
+    memories,
     recent: [
       ...finance.transactions.filter((t) => t.status === "flagged" || t.status === "blocked" || (t.riskScore ?? 0) >= 40).slice(0, 8),
       ...finance.transactions.slice(0, 12),
@@ -151,6 +157,12 @@ export function buildContext(s: Snapshot): string {
         .join("; ") || "none"
     }.`,
   );
+  if (s.closedSubs.length > 0) {
+    lines.push(`Closed cards (cancelled earlier, so no longer charged and not in the list above): ${s.closedSubs.join(", ")}.`);
+  }
+  if (s.memories.length > 0) {
+    lines.push(`Things the user asked Vera to remember (treat as true, in their words): ${s.memories.join("; ")}.`);
+  }
   lines.push(
     `Recent transactions, newest first (negative = spending; "flagged" = Vera's fraud check is waiting on the user, "blocked" = declined): ${
       s.recent
@@ -179,6 +191,8 @@ export function buildSystemPrompt(context: string, opts: AskOptions = {}): strin
     "Answer using only the user's data below. Be concise (under 120 words) and specific with dollar amounts.",
     "Never invent numbers that are not in the data or derivable from it. Plain text only: no markdown headings; short sentences or simple '- ' bullets are fine.",
     "If asked for investment picks or tax/legal advice, say you are not a licensed advisor and keep to budgeting.",
+    "Vera can also act when asked: close or pause a subscription card, approve a new price, set a budget, add to a goal, record a debt payment. Each one waits for the user to confirm. Actions the conversation shows as done are real: the data above already reflects them. Never say you have done something unless the conversation shows it was done; if asked to act, tell them to ask directly, like \"cancel Netflix\".",
+    "Use the remembered facts when they help, but never repeat them back unprompted.",
     "",
     "USER DATA",
     context,
@@ -326,6 +340,7 @@ export async function answerQuestion(
   snapshot: Snapshot,
   opts: AskOptions = {},
 ): Promise<{ text: string; ai: boolean }> {
+  // askClaude (lib/ai.ts) routes to Claude or the on-device model by LLM_PROVIDER.
   if (aiEnabled()) {
     try {
       const text = await askClaude(buildSystemPrompt(buildContext(snapshot), opts), [...history, { role: "user", content: question }], opts.voice ? 200 : 600);

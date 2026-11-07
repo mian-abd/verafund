@@ -65,3 +65,18 @@ testCases:
     criteria: >-
       the Planet Fitness detail page shows the status "Cancelled: card closed" and its last charge
       is "Declined" with "Card closed after you cancelled Planet Fitness"
+
+  - id: w5-find-subscriptions
+    area: guard/discovery
+    name: Subscriptions found in the transaction history can be guarded in one click
+    steps:
+      - go to /
+      - click the "Get started" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Find my subscriptions" button
+      - in the list under "Subscriptions", read the Hulu and iCloud Plus rows
+      - click the "Guard selected (2)" button
+      - reload the page
+    criteria: >-
+      the Hulu row was marked "Price went up" with "the price went from $9.99 to $11.99",
+      after guarding the page says "Guarded 2 subscriptions", and the page now has a Hulu
+      section showing "limit $11.99" and an iCloud Plus section showing "limit $2.99"

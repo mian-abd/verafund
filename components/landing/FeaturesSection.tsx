@@ -184,7 +184,7 @@ const FeaturesSection = () => {
             <div className="relative z-10 mb-4">
               <h3 className="text-xl font-bold text-foreground mb-2">Subscription Guard</h3>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Every subscription gets its own virtual card with a hard price cap. A price hike is declined until you approve it, and a free trial locks before it can turn into a paid plan.
+                Every subscription gets its own virtual card with a hard price cap. A price hike is declined until you approve it, and a free trial locks before it can turn into a paid plan. “Find my subscriptions” scans your history and guards what it finds in one click.
               </p>
             </div>
             <div className="flex-1 flex justify-center items-center">
@@ -227,7 +227,7 @@ const FeaturesSection = () => {
             <div className="relative z-10 mb-4">
               <h3 className="text-xl font-bold text-foreground mb-2">Vera, by text or voice</h3>
               <p className="text-sm text-muted-foreground max-w-sm">
-                Ask Vera on any page, or call her hands-free. She flags suspicious charges with a plain-English reason, asks “was this you?”, and answers from your real numbers.
+                Call Vera hands-free and just say it: “cancel Netflix”, “pause Spotify”, “set my food budget to $300”. She reads it back, waits for your yes, then does it, and remembers what you tell her. She also flags suspicious charges and answers from your real numbers.
               </p>
             </div>
             <div className="flex-1 flex justify-center items-center">

@@ -13,13 +13,13 @@ const steps = [
   {
     num: "2",
     title: "Connect Your Bank",
-    desc: "Link a bank through Plaid. Your accounts and transactions are imported, and each subscription gets its own guarded card.",
+    desc: "Link a bank through Plaid. VeraFund finds your recurring charges, and you guard each subscription with its own capped card in one click.",
     img: "/images/step2.png",
   },
   {
     num: "3",
     title: "Let Vera Guard You",
-    desc: "Price hikes wait for your approval, trials lock on time, fraud gets flagged with reasons, and Vera answers questions by text or voice.",
+    desc: "Price hikes wait for your approval, trials lock on time, fraud gets flagged with reasons, and Vera takes care of things when you ask, by text or by voice.",
     img: "/images/step3.png",
   },
 ];
