@@ -33,3 +33,7 @@ Thumbs.db
 
 # seldon CLI local state
 .seldon/
+
+# local working notes (not published)
+log.md
+Context.md
