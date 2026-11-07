@@ -42,6 +42,17 @@ Copy `.env.example` to `.env.local` to point at Turso and/or a Stripe sandbox.
 
 `GET /api/health` reports database reachability and the payments mode.
 
+## Self-host (Docker, Jetson)
+
+One container, with the SQLite file on a volume and no cloud database. Stripe is optional; without it the app runs in simulated mode.
+
+```bash
+docker build -t verafund .
+docker run -d --name verafund -p 3000:3000 -v verafund-data:/data --restart unless-stopped verafund
+```
+
+Then open `http://<host-ip>:3000`. The image sets `COOKIE_SECURE=false` so the demo session works over plain HTTP on a LAN. Set it to `true` behind HTTPS. To build an arm64 image on a PC: `docker buildx build --platform linux/arm64 -t verafund:arm64 --load .`
+
 ## Demo workflows (used for Wren QA)
 
 **W1: Price hike blocked, then approved.** Start demo → simulate an $18.99 charge on Netflix (limit $15.99) → it's declined, with "$18.99 is above your $15.99 limit" → click "Approve $18.99 going forward" → simulate $18.99 again → it's approved → reload, and the limit and both charges persist.
