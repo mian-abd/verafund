@@ -53,4 +53,3 @@ No. This is Stripe's Issuing sandbox (test mode). The app refuses live keys.
 
 **"How would this make money?"**
 Card issuers earn interchange on spend, which is how card-control products are typically funded. That keeps it free for users. This is a hypothesis, not a validated model.
-

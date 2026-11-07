@@ -80,4 +80,3 @@ lib/guard.ts    workspace-scoped service layer
 lib/payments/   Stripe sandbox and simulated adapters
 lib/db/         Drizzle schema and libSQL client (schema is created on first use)
 ```
-
