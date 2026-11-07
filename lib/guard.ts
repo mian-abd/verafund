@@ -4,10 +4,13 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { getDb, type Db } from "./db/client";
+import { seedFinance } from "./finance-seed";
 import {
+  accounts,
   charges,
   policyEvents,
   subscriptions,
+  transactions,
   workspaces,
   type Charge,
   type PolicyEvent,
@@ -157,6 +160,7 @@ export async function createDemoWorkspace(): Promise<string> {
   await db.insert(workspaces).values({ id, createdAt: now, clockOffsetDays: 0 });
   await db.insert(subscriptions).values(rows);
   for (const sub of rows) await logEvent(db, sub, "created", createdDetail(sub), now, "system");
+  await seedFinance(db, id, now);
   return id;
 }
 
@@ -240,6 +244,27 @@ export async function simulateCharge(workspaceId: string, subscriptionId: string
     providerAuthorizationId,
     providerReason,
     resolution: null,
+    createdAt: Date.now(),
+  });
+
+  // Mirror the attempt into the transaction history so it shows on the dashboard.
+  const [card] = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(and(eq(accounts.workspaceId, workspaceId), eq(accounts.type, "credit")));
+  await db.insert(transactions).values({
+    id: randomUUID(),
+    workspaceId,
+    accountId: card?.id ?? "virtual",
+    merchant: sub.merchant,
+    category: "subscriptions",
+    amountCents: -amountCents,
+    occurredAt: now,
+    description: decision.approved ? `Guard card ••${sub.cardLast4}` : `Blocked by Guard: ${decision.text}`,
+    status: decision.approved ? "posted" : "blocked",
+    riskScore: null,
+    riskSignals: null,
+    subscriptionId: sub.id,
     createdAt: Date.now(),
   });
 }

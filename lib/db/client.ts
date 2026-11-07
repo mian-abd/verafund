@@ -62,6 +62,104 @@ const DDL = [
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS profiles (
+    workspace_id TEXT PRIMARY KEY,
+    display_name TEXT NOT NULL,
+    monthly_income_cents INTEGER NOT NULL,
+    hourly_rate_cents INTEGER NOT NULL,
+    tax_rate_bps INTEGER NOT NULL,
+    employer TEXT NOT NULL,
+    pay_frequency TEXT NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS accounts (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    institution TEXT NOT NULL,
+    balance_cents INTEGER NOT NULL,
+    color TEXT NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS accounts_workspace ON accounts(workspace_id)`,
+  `CREATE TABLE IF NOT EXISTS transactions (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    merchant TEXT NOT NULL,
+    category TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    occurred_at INTEGER NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL,
+    risk_score INTEGER,
+    risk_signals TEXT,
+    subscription_id TEXT,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS transactions_workspace ON transactions(workspace_id, occurred_at)`,
+  `CREATE TABLE IF NOT EXISTS budgets (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    category TEXT NOT NULL,
+    limit_cents INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS goals (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    icon TEXT NOT NULL,
+    target_cents INTEGER NOT NULL,
+    saved_cents INTEGER NOT NULL,
+    due_at INTEGER,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS debts (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    balance_cents INTEGER NOT NULL,
+    original_cents INTEGER NOT NULL,
+    apr_bps INTEGER NOT NULL,
+    min_payment_cents INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS user_cards (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    issuer TEXT NOT NULL,
+    type TEXT NOT NULL,
+    last4 TEXT NOT NULL,
+    base_reward_bps INTEGER NOT NULL,
+    category_bonuses TEXT NOT NULL,
+    annual_fee_cents INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    read INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS notifications_workspace ON notifications(workspace_id, created_at)`,
+  `CREATE TABLE IF NOT EXISTS advisor_messages (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS purchase_checks (
+    id TEXT PRIMARY KEY,
+    workspace_id TEXT NOT NULL,
+    item TEXT NOT NULL,
+    price_cents INTEGER NOT NULL,
+    verdict TEXT NOT NULL,
+    analysis TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  )`,
 ];
 
 export type Db = LibSQLDatabase<typeof schema>;
