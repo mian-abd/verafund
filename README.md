@@ -51,7 +51,14 @@ docker build -t verafund .
 docker run -d --name verafund -p 3000:3000 -v verafund-data:/data --restart unless-stopped verafund
 ```
 
-Then open `http://<host-ip>:3000`. The image sets `COOKIE_SECURE=false` so the demo session works over plain HTTP on a LAN. Set it to `true` behind HTTPS. To build an arm64 image on a PC: `docker buildx build --platform linux/arm64 -t verafund:arm64 --load .`
+Then open `http://<host-ip>:3000`. The image sets `COOKIE_SECURE=false` so the demo session works over plain HTTP on a LAN. Set it to `true` behind HTTPS.
+
+**Jetson (JetPack 6) with Docker 28 or newer:** the L4T kernel has no iptables `raw` table, so bridge networking fails with "Unable to enable DIRECT ACCESS FILTERING". Use host networking for both steps:
+
+```bash
+docker build --network=host -t verafund .
+docker run -d --name verafund --network host -v verafund-data:/data --restart unless-stopped verafund
+``` To build an arm64 image on a PC: `docker buildx build --platform linux/arm64 -t verafund:arm64 --load .`
 
 ## Demo workflows (used for Wren QA)
 

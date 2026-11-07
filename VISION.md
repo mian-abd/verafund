@@ -33,7 +33,7 @@ The architecture already supports layer 3. One codebase runs on Turso in the clo
 
 ## Hardware
 - **The Jetson is the reference appliance, not the product.** The software must run on any Linux box.
-- **Our board:** a Jetson Orin-family device on JetPack 6 (Ubuntu 22.04), reachable over USB-C at `192.168.55.1`. The exact model is still to be confirmed.
+- **Our board:** a Jetson Orin Nano Developer Kit on JetPack 6 (L4T R36.3, Ubuntu 22.04.5). It has 8GB of RAM, a 6-core ARM CPU, 15W power mode, and a 238GB microSD card with 134GB free. Docker 29 is installed. Moving to NVMe and the 25W "Super" power mode are on the Week 1 list.
 - **The GPU is only for language work:** Q&A, statement OCR, explanations. Detection is CPU work.
 
 ## Roadmap

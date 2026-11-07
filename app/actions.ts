@@ -22,7 +22,7 @@ import { getWorkspaceId, setWorkspaceId } from "@/lib/session";
 function userMessage(err: unknown): string {
   if (err instanceof GuardError) return err.message;
   if (err instanceof Stripe.errors.StripeError) return `Stripe sandbox error: ${err.message}`;
-  return "Something went wrong. Try again, or reset the demo.";
+  return "Something went wrong. Try again, or start over.";
 }
 
 function returnPath(formData: FormData): string {

@@ -23,7 +23,7 @@ export const DAY_MS = 86_400_000;
 export class GuardError extends Error {}
 export class WorkspaceMissingError extends GuardError {
   constructor() {
-    super("Your demo session has expired. Start a new demo.");
+    super("Your session has expired. Get started again.");
   }
 }
 
@@ -73,7 +73,7 @@ async function requireSubscription(db: Db, workspaceId: string, subscriptionId: 
     .select()
     .from(subscriptions)
     .where(and(eq(subscriptions.id, subscriptionId), eq(subscriptions.workspaceId, workspaceId)));
-  if (!sub) throw new GuardError("That subscription doesn't exist in this demo.");
+  if (!sub) throw new GuardError("That subscription doesn't exist in your workspace.");
   return sub;
 }
 
@@ -82,7 +82,7 @@ async function requireCharge(db: Db, workspaceId: string, chargeId: string): Pro
     .select()
     .from(charges)
     .where(and(eq(charges.id, chargeId), eq(charges.workspaceId, workspaceId)));
-  if (!charge) throw new GuardError("That charge doesn't exist in this demo.");
+  if (!charge) throw new GuardError("That charge doesn't exist in your workspace.");
   return charge;
 }
 

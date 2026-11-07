@@ -9,7 +9,7 @@ Before the demo:
 "Rocket Money charges you a subscription to tell you about subscriptions you've **already paid for**. We think the charge should ask *you* first. VeraFund gives every subscription its own card with a hard price cap, and the card network enforces it."
 
 ## 0:20–1:10: Hand them the laptop (W1)
-- "Click **Start demo**. Each of these is a real virtual card." In Stripe mode, add: "…issued in Stripe's Issuing sandbox."
+- "Click **Get started**. Each of these is a real virtual card." In Stripe mode, add: "…issued in Stripe's Issuing sandbox."
 - "Netflix just raised its price. Type **18.99** on Netflix and hit **Simulate charge**."
 - It's **declined**: "$18.99 is above your $15.99 limit".
 - "That decline didn't come from an if-statement in our app. Stripe's spending controls rejected it before any money moved. We store Stripe's own reason as evidence." Only say this in Stripe mode. In simulated mode, say "our decision engine".

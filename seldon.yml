@@ -10,7 +10,7 @@ testCases:
     name: A price hike above the card limit is declined, then approved by the user
     steps:
       - go to /
-      - click the "Start demo" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Get started" button in the middle of the page and wait for the "Guarded subscriptions" page
       - in the Netflix section, confirm it says "limit $15.99"
       - in the Netflix section, replace the charge amount with 18.99 and click "Simulate charge"
       - in the Netflix section, read the last charge result
@@ -27,7 +27,7 @@ testCases:
     name: A free trial's card locks when the trial ends, so the first paid charge is declined
     steps:
       - go to /
-      - click the "Start demo" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Get started" button in the middle of the page and wait for the "Guarded subscriptions" page
       - click "Add subscription"
       - enter "Calm" as the merchant and 12.99 as the price, leave the billing cycle on Monthly, check "Free trial", keep the trial length at 7 days, and click "Save subscription"
       - confirm the Calm section's status starts with "Trial"
@@ -44,7 +44,7 @@ testCases:
     name: The user can keep blocking a price hike
     steps:
       - go to /
-      - click the "Start demo" button in the middle of the page
+      - click the "Get started" button in the middle of the page
       - in the Spotify section, replace the charge amount with 14.99 and click "Simulate charge"
       - click "Keep blocking"
       - reload the page
@@ -58,7 +58,7 @@ testCases:
     name: A paused card declines charges and a closed card stays closed
     steps:
       - go to /
-      - click the "Start demo" button in the middle of the page
+      - click the "Get started" button in the middle of the page
       - in the Planet Fitness section click "Pause card", then click "Simulate charge"
       - click "Details" in the Planet Fitness section
       - 'click "I cancelled with Planet Fitness: close card", then click "Simulate charge"'

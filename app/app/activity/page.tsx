@@ -12,7 +12,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Activity</h1>
         <p className="text-sm text-muted-foreground">
-          Every charge decision and policy change in this demo, newest first.
+          Every charge decision and policy change, newest first.
         </p>
       </div>
       <ErrorBanner message={error} />

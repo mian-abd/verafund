@@ -48,12 +48,12 @@ export default async function Home({
               href="/app"
               className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
             >
-              Continue demo
+              Continue
             </Link>
           ) : (
             <form action={startDemo}>
               <SubmitButton pendingText="Starting…" className="px-5 py-2.5">
-                Start demo
+                Get started
               </SubmitButton>
             </form>
           )}
@@ -85,14 +85,14 @@ export default async function Home({
             </p>
 
             <div className="w-full max-w-md space-y-3 mb-10">
-              {expired && !error && <ErrorBanner message="Your demo session expired. Start a new demo." />}
+              {expired && !error && <ErrorBanner message="Your session expired. Get started again." />}
               <ErrorBanner message={error} />
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
               <form action={startDemo}>
-                <SubmitButton pendingText="Starting your demo…" className="pl-6 pr-2 py-2">
-                  {hasDemo ? "Start a fresh demo" : "Start demo"}
+                <SubmitButton pendingText="Setting up your cards…" className="pl-6 pr-2 py-2">
+                  {hasDemo ? "Start over" : "Get started"}
                   <span className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center">
                     <ArrowUpRight size={16} aria-hidden="true" />
                   </span>
@@ -103,13 +103,13 @@ export default async function Home({
                   href="/app"
                   className="inline-flex items-center justify-center rounded-full bg-dark px-6 py-3 text-sm font-medium text-background hover:opacity-90"
                 >
-                  Continue demo
+                  Continue
                 </Link>
               )}
             </div>
 
             <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground mb-6">
-              [ Demo data only · no real money moves ]
+              [ Sandbox cards · no real money moves ]
             </p>
 
             <div className="w-full max-w-2xl">
@@ -146,7 +146,7 @@ export default async function Home({
               Vera<span className="text-muted-foreground font-medium">Fund</span>
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">© 2026 VeraFund · Demo build</p>
+          <p className="text-xs text-muted-foreground">© 2026 VeraFund</p>
         </div>
       </footer>
     </div>

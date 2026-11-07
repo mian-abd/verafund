@@ -52,8 +52,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
         <AppNav orientation="vertical" />
         <div className="m-3 rounded-xl border border-border bg-background p-4 text-xs text-muted-foreground space-y-2">
-          <p className="font-semibold text-foreground">Demo workspace</p>
-          <p>Your data is private to this browser session and uses demo merchants and prices.</p>
+          <p className="font-semibold text-foreground">Private workspace</p>
+          <p>Your data stays private to this browser. Sandbox cards: no real money moves.</p>
         </div>
       </aside>
 
@@ -69,7 +69,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="flex flex-wrap items-center gap-3">
             <ModeBadge />
             <span className="text-sm text-muted-foreground" data-testid="demo-date">
-              Demo date: <span className="font-medium text-foreground">{formatDate(now)}</span>
+              Today: <span className="font-medium text-foreground">{formatDate(now)}</span>
               {workspace.clockOffsetDays > 0 && ` (+${workspace.clockOffsetDays} days)`}
             </span>
           </div>
@@ -82,7 +82,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </form>
             <form action={resetDemoAction}>
               <SubmitButton variant="ghost" pendingText="Resetting…">
-                Reset demo
+                Start over
               </SubmitButton>
             </form>
             <div className="hidden md:block">
