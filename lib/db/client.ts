@@ -66,12 +66,18 @@ const DDL = [
 
 export type Db = LibSQLDatabase<typeof schema>;
 
+// TURSO_* are the names the Vercel Marketplace Turso integration injects.
+function configuredUrl(): string {
+  return (process.env.DATABASE_URL || process.env.TURSO_DATABASE_URL || "").trim();
+}
+
 export function databaseKind(): "turso" | "file" {
-  return (process.env.DATABASE_URL ?? "").startsWith("file:") || !process.env.DATABASE_URL ? "file" : "turso";
+  const url = configuredUrl();
+  return !url || url.startsWith("file:") ? "file" : "turso";
 }
 
 function resolveUrl(): string {
-  const url = process.env.DATABASE_URL?.trim();
+  const url = configuredUrl();
   if (url) return url;
   if (process.env.VERCEL) {
     throw new Error(
@@ -87,7 +93,7 @@ export async function getDb(): Promise<Db> {
   if (!state) {
     const client = createClient({
       url: resolveUrl(),
-      authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
+      authToken: process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN || undefined,
     });
     const ready = client
       .batch(DDL, "write")

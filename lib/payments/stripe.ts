@@ -35,6 +35,7 @@ async function cardholderId(): Promise<string> {
     const holder = await stripe().issuing.cardholders.create({
       name: "VeraFund Demo",
       email: "demo@verafund.example",
+      phone_number: "+18888675309", // required for card creation (3DS); Stripe's documented example number
       type: "individual",
       status: "active",
       individual: {
@@ -62,14 +63,18 @@ export const stripePayments: PaymentsAdapter = {
   mode: "stripe",
 
   async createCard({ merchant, limitCents, workspaceId, subscriptionId }) {
-    const card = await stripe().issuing.cards.create({
+    // Newer sandboxes fund Issuing from a v2 financial account that must be passed explicitly.
+    const financialAccount = process.env.STRIPE_FINANCIAL_ACCOUNT?.trim();
+    const params: Stripe.Issuing.CardCreateParams & { financial_account_v2?: string } = {
       cardholder: await cardholderId(),
       currency: "usd",
       type: "virtual",
       status: "active",
       spending_controls: { spending_limits: [{ amount: limitCents, interval: "per_authorization" }] },
       metadata: { workspace_id: workspaceId, subscription_id: subscriptionId, merchant },
-    });
+      ...(financialAccount ? { financial_account_v2: financialAccount } : {}),
+    };
+    const card = await stripe().issuing.cards.create(params);
     return { cardId: card.id, last4: card.last4 };
   },
 
