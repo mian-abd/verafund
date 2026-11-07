@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Mic, ShieldAlert, Volume2, VolumeX } from "lucide-react";
-import { resolveFlaggedAction } from "@/app/app/transactions/actions";
+import { resolveFlaggedAction, ringPhoneAction } from "@/app/app/transactions/actions";
 import { ReturnTo, SubmitButton } from "@/components/ui";
 
 const VOICE_KEY = "vf_vera_voice";
@@ -44,7 +44,7 @@ export interface FraudAlertData {
 // Vera reads a flagged charge out loud (ElevenLabs, or the browser's voice as a
 // fallback) and lets you answer by voice or with the buttons. Voice is off until
 // the user turns it on, so automated test runs never trigger audio.
-export function FraudAlert({ alert }: { alert: FraudAlertData }) {
+export function FraudAlert({ alert, phoneReady = false }: { alert: FraudAlertData; phoneReady?: boolean }) {
   const [voiceOn, setVoiceOn] = useState(false);
   const [listening, setListening] = useState(false);
   const [heard, setHeard] = useState<string | null>(null);
@@ -150,6 +150,15 @@ export function FraudAlert({ alert }: { alert: FraudAlertData }) {
             No, block it
           </SubmitButton>
         </form>
+        {phoneReady && (
+          <form action={ringPhoneAction}>
+            <ReturnTo />
+            <input type="hidden" name="transactionId" value={alert.transactionId} />
+            <SubmitButton variant="ghost" pendingText="Ringing…" data-testid="fraud-ring-phone">
+              Ring my phone
+            </SubmitButton>
+          </form>
+        )}
         <button
           type="button"
           onClick={listen}

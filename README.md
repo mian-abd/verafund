@@ -201,6 +201,11 @@ Copy `.env.example` to `.env.local` and add what you need:
 | `ELEVENLABS_API_KEY` | Vera's voice (browser voice without it) |
 | `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` | Bank connections |
 | `LLM_PROVIDER`, `OLLAMA_URL`, `OLLAMA_MODEL` | Private mode: `ollama`, `http://127.0.0.1:11434`, `qwen2.5:3b` |
+| `NTFY_TOPIC`, `PHONE_ALERT_SECRET`, `APP_BASE_URL` | Vera calls your phone on fraud (free, via the ntfy app); subscribe to the topic in ntfy |
+
+### Vera calls your phone
+
+No phone carrier needed. When a charge is flagged and phone alerts are on (Transactions page), VeraFund sends a max-priority push to your [ntfy](https://ntfy.sh) topic. Your phone rings with **Answer Vera**, **It was me** and **Block it**. The two answer buttons work from the lock screen. Answer opens a call screen where Vera asks out loud in her ElevenLabs voice and listens for yes or no. Links are signed and expire after an hour, so they work on a phone that has no VeraFund session.
 
 ## Self-host on a Jetson (or any Docker host)
 

@@ -4,6 +4,8 @@ import { ErrorBanner } from "@/components/guard";
 import { FraudAlert } from "@/components/transactions/FraudAlert";
 import { STATUSES } from "@/components/transactions/options";
 import { SimulateForm } from "@/components/transactions/SimulateForm";
+import { PhoneAlerts } from "@/components/transactions/PhoneAlerts";
+import { phoneAlertsConfigured, phoneAlertsOn } from "@/lib/phone-alert";
 import { TransactionRow } from "@/components/transactions/TransactionRow";
 import { parseRiskSignals, veraFraudScript } from "@/lib/fraud";
 import { getFinance } from "@/lib/finance";
@@ -33,6 +35,8 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
 
   const workspaceId = (await getWorkspaceId())!;
   const { transactions: all, accounts } = await getFinance(workspaceId);
+  const phoneReady = phoneAlertsConfigured();
+  const phoneOn = phoneReady && (await phoneAlertsOn(workspaceId));
 
   const accountName = new Map(accounts.map((a) => [a.id, a.name]));
   const categories = [...new Set(all.map((t) => t.category))].sort();
@@ -76,7 +80,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
       </div>
 
       <ErrorBanner message={error || undefined} />
-      {alert && <FraudAlert alert={alert} />}
+      {alert && <FraudAlert alert={alert} phoneReady={phoneReady} />}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
         <div className="order-2 space-y-4 lg:order-1">
@@ -182,8 +186,9 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
           )}
         </div>
 
-        <div className="order-1 lg:order-2 lg:sticky lg:top-6">
+        <div className="order-1 lg:order-2 lg:sticky lg:top-6 space-y-6">
           <SimulateForm />
+          {phoneReady && <PhoneAlerts on={phoneOn} />}
         </div>
       </div>
     </div>

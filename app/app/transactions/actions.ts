@@ -4,16 +4,19 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { PURCHASE_CATEGORIES } from "@/components/transactions/options";
 import { getDb } from "@/lib/db/client";
 import { notifications, transactions } from "@/lib/db/schema";
 import { getFinance } from "@/lib/finance";
-import { scorePurchase, parseRiskSignals, severityOf, type RiskSignal } from "@/lib/fraud";
+import { scorePurchase, type RiskSignal } from "@/lib/fraud";
 import { formatCents, parseDollarsToCents } from "@/lib/format";
 import { GuardError, WorkspaceMissingError } from "@/lib/guard";
 import { jevTriage } from "@/lib/jev";
 import { logDecision } from "@/lib/decision";
 import { getWorkspaceId } from "@/lib/session";
+import { answerFlagged } from "@/lib/fraud-answer";
+import { phoneAlertsConfigured, phoneAlertsOn, ringPhone, setPhoneAlerts } from "@/lib/phone-alert";
 
 const BACK = "/app/transactions";
 
@@ -84,8 +87,9 @@ export async function simulatePurchaseAction(formData: FormData) {
     const flagged = result.severity === "high";
 
     const db = await getDb();
+    const transactionId = randomUUID();
     await db.insert(transactions).values({
-      id: randomUUID(),
+      id: transactionId,
       workspaceId,
       accountId: checking.id,
       merchant,
@@ -111,6 +115,12 @@ export async function simulatePurchaseAction(formData: FormData) {
         read: false,
         createdAt: Date.now(),
       });
+      // Ring the owner's phone right away, without holding up the page.
+      if (phoneAlertsConfigured() && (await phoneAlertsOn(workspaceId))) {
+        after(() =>
+          ringPhone({ workspaceId, transactionId, merchant, amountCents, riskScore: result.score }).then(() => undefined),
+        );
+      }
     }
   });
 }
@@ -120,51 +130,34 @@ export async function resolveFlaggedAction(formData: FormData) {
     const id = text(formData, "transactionId");
     const decision = text(formData, "decision");
     if (!id || (decision !== "yes" && decision !== "no")) throw new GuardError("That answer didn't come through. Try again.");
+    await answerFlagged(workspaceId, id, decision);
+  });
+}
 
+export async function setPhoneAlertsAction(formData: FormData) {
+  await run(async (workspaceId) => {
+    await setPhoneAlerts(workspaceId, text(formData, "on") === "1");
+  });
+}
+
+// "Ring my phone" on a flagged charge: sends the alert again, on demand.
+export async function ringPhoneAction(formData: FormData) {
+  await run(async (workspaceId) => {
+    if (!phoneAlertsConfigured()) throw new GuardError("Phone alerts aren't set up on this server.");
+    const id = text(formData, "transactionId");
     const db = await getDb();
     const [tx] = await db
       .select()
       .from(transactions)
       .where(and(eq(transactions.id, id), eq(transactions.workspaceId, workspaceId)));
-    if (!tx) throw new GuardError("That transaction doesn't exist in your workspace.");
-    if (tx.status !== "flagged") throw new GuardError("You already answered this charge.");
-
-    const amountCents = Math.abs(tx.amountCents);
-
-    if (decision === "yes") {
-      const before = tx.riskScore ?? 0;
-      const after = Math.round(before * 0.3);
-      const signals: RiskSignal[] = [
-        ...parseRiskSignals(tx.riskSignals),
-        {
-          signal: "user_confirmed",
-          points: after - before,
-          detail: `You told Vera this purchase was yours, so the risk dropped from ${before} to ${after}.`,
-        },
-      ];
-      const done = await db
-        .update(transactions)
-        .set({ status: "posted", riskScore: after, riskSignals: JSON.stringify(signals) })
-        .where(and(eq(transactions.id, id), eq(transactions.workspaceId, workspaceId), eq(transactions.status, "flagged")))
-        .returning({ id: transactions.id });
-      if (done.length === 0) throw new GuardError("You already answered this charge.");
-      return;
-    }
-
-    const done = await db
-      .update(transactions)
-      .set({ status: "blocked" })
-      .where(and(eq(transactions.id, id), eq(transactions.workspaceId, workspaceId), eq(transactions.status, "flagged")))
-      .returning({ id: transactions.id });
-    if (done.length === 0) throw new GuardError("You already answered this charge.");
-    await db.insert(notifications).values({
-      id: randomUUID(),
+    if (!tx || tx.status !== "flagged") throw new GuardError("That charge isn't waiting for an answer.");
+    const sent = await ringPhone({
       workspaceId,
-      kind: "fraud_blocked",
-      title: `Vera blocked a ${formatCents(amountCents)} charge at ${tx.merchant}`,
-      body: `You said it wasn't you, so the ${severityOf(tx.riskScore ?? 0)}-risk charge was blocked and no money moved.`,
-      read: false,
-      createdAt: Date.now(),
+      transactionId: tx.id,
+      merchant: tx.merchant,
+      amountCents: Math.abs(tx.amountCents),
+      riskScore: tx.riskScore ?? 0,
     });
+    if (!sent) throw new GuardError("Couldn't reach your phone just now. Wait a few seconds and try again.");
   });
 }
