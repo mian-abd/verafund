@@ -1,5 +1,6 @@
 import { addSubscriptionAction } from "../actions";
 import { Disclosure } from "@/components/Disclosure";
+import { DiscoveryPanel } from "@/components/discovery/DiscoveryPanel";
 import { ErrorBanner, SubscriptionPanel } from "@/components/guard";
 import { ReturnTo, SubmitButton } from "@/components/ui";
 import { formatCents } from "@/lib/format";
@@ -88,6 +89,8 @@ export default async function SubscriptionsPage({ searchParams }: { searchParams
 
       {/* Remounts closed and empty after each successful add */}
       <AddSubscriptionForm key={subscriptions.length} />
+
+      <DiscoveryPanel searchParams={searchParams} />
 
       <div className="space-y-4">
         {subscriptions.map((sub) => (

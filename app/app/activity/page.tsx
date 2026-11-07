@@ -1,3 +1,4 @@
+import { DecisionLog } from "@/components/DecisionLog";
 import { ErrorBanner, Timeline } from "@/components/guard";
 import { getActivity } from "@/lib/guard";
 import { getWorkspaceId } from "@/lib/session";
@@ -16,6 +17,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         </p>
       </div>
       <ErrorBanner message={error} />
+      <DecisionLog workspaceId={workspaceId} />
       <Timeline items={timeline} merchantById={merchantById} />
     </div>
   );

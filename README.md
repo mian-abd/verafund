@@ -123,13 +123,26 @@ flowchart LR
   end
   subgraph edge[Your hardware · NVIDIA Jetson Orin Nano]
     docker[Docker container<br/>same app, standalone build] --> sqlite[(SQLite file<br/>/data/verafund.db)]
+    docker --> ollama[Ollama on the GPU<br/>qwen2.5:3b · localhost only]
   end
   vercel -. same code .- docker
   cloud --> apis[Claude · Jev · ElevenLabs · Plaid · Stripe]
-  edge --> apis
+  edge --> apis2[Jev · Plaid]
 ```
 
 The database layer is libSQL, so the same code talks to Turso in the cloud or to a local SQLite file on the Jetson.
+
+### Private mode (on-device AI)
+
+With `LLM_PROVIDER=ollama`, Vera's language model runs on the Jetson's GPU instead of the cloud, and the header shows **On-device AI**. Photo reading turns off, because it needs Claude and private mode keeps photos on the device.
+
+Measured on a Jetson Orin Nano 8GB (JetPack 6.0, 15 W mode) with `python3 scripts/llm-bench.py`:
+
+| Model | Decode | Prompt processing | Cold load | GPU | Board power | Tool choice |
+|---|---|---|---|---|---|---|
+| qwen2.5:3b (Q4_K_M) | **14.1 tokens/s** | 488 tokens/s | 14.7 s | 84% | 10.8 W | 3/3 correct, ~3 s each |
+
+A spoken answer of about 60 words takes roughly 5 seconds to generate, and choosing an action ("cancel my Netflix" → `cancel_subscription(merchant: "Netflix")`) takes about 3 seconds.
 
 ## Data model
 
@@ -187,6 +200,7 @@ Copy `.env.example` to `.env.local` and add what you need:
 | `TYPESAFE_API_KEY` | Jev fraud triage (skipped without it) |
 | `ELEVENLABS_API_KEY` | Vera's voice (browser voice without it) |
 | `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` | Bank connections |
+| `LLM_PROVIDER`, `OLLAMA_URL`, `OLLAMA_MODEL` | Private mode: `ollama`, `http://127.0.0.1:11434`, `qwen2.5:3b` |
 
 ## Self-host on a Jetson (or any Docker host)
 
@@ -197,6 +211,16 @@ docker run -d --name verafund --network host --env-file verafund.env \
 ```
 
 `--network=host` is needed on JetPack 6 with Docker 28+, whose kernel lacks the iptables `raw` table. The app is then at `http://<jetson-ip>:3000` and stores everything in `/data/verafund.db` on the device.
+
+For private mode, run Ollama on the GPU (bound to localhost so nothing else on the network can use it), then add `LLM_PROVIDER=ollama` and `OLLAMA_URL=http://127.0.0.1:11434` to `verafund.env`:
+
+```bash
+docker run -dit --name ollama --runtime nvidia --network host --restart unless-stopped \
+  -e OLLAMA_HOST=127.0.0.1:11434 -v ~/ollama-models:/data/models/ollama/models \
+  -v ~/ollama-logs:/data/logs dustynv/ollama:r36.3.0
+docker exec ollama ollama pull qwen2.5:3b
+python3 scripts/llm-bench.py qwen2.5:3b
+```
 
 ## Quality
 

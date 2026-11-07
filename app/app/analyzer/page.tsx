@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { AnalysisResult, CheckHistory } from "@/components/analyzer/AnalysisResult";
 import { AnalyzerForm } from "@/components/analyzer/AnalyzerForm";
-import { aiEnabled } from "@/lib/ai";
+import { visionEnabled } from "@/lib/ai";
 import { getDb } from "@/lib/db/client";
 import { purchaseChecks } from "@/lib/db/schema";
 import { getWorkspaceId } from "@/lib/session";
@@ -50,7 +50,7 @@ export default async function AnalyzerPage({
         </p>
       </div>
 
-      <AnalyzerForm key={selected?.id ?? "new"} aiOnline={aiEnabled()} error={error ?? (missingCheck ? "That check could not be found." : null)} />
+      <AnalyzerForm key={selected?.id ?? "new"} aiOnline={visionEnabled()} error={error ?? (missingCheck ? "That check could not be found." : null)} />
 
       {selected && analysis && (
         <AnalysisResult item={selected.item} createdAt={selected.createdAt} analysis={analysis} />

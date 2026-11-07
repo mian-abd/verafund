@@ -12,8 +12,98 @@ export const IMAGE_MEDIA_TYPES: ImageMediaType[] = ["image/jpeg", "image/png", "
 
 export class AiUnavailableError extends Error {}
 
+// Private mode: with LLM_PROVIDER=ollama (or no Anthropic key but an OLLAMA_URL), text
+// answers come from a local model, e.g. on the Jetson's GPU.
+// Hybrid mode: AGENT_LLM_PROVIDER=ollama runs Vera's action choices on the local model
+// while conversation stays on Claude.
+export type LlmProvider = "anthropic" | "ollama";
+export const DEFAULT_OLLAMA_MODEL = "qwen2.5:3b";
+const OLLAMA_TIMEOUT_MS = 90_000;
+
+function resolveProvider(wanted: string | undefined): LlmProvider | null {
+  const hasKey = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  const hasOllama = Boolean(process.env.OLLAMA_URL?.trim());
+  const w = wanted?.trim().toLowerCase();
+  if (w === "ollama" && hasOllama) return "ollama";
+  if (w === "anthropic" && hasKey) return "anthropic";
+  if (hasKey) return "anthropic";
+  if (hasOllama) return "ollama";
+  return null;
+}
+
+export function llmProvider(): LlmProvider | null {
+  return resolveProvider(process.env.LLM_PROVIDER);
+}
+
+export function agentLlmProvider(): LlmProvider | null {
+  return resolveProvider(process.env.AGENT_LLM_PROVIDER || process.env.LLM_PROVIDER);
+}
+
+export function ollamaModel(): string {
+  return process.env.OLLAMA_MODEL?.trim() || DEFAULT_OLLAMA_MODEL;
+}
+
+// Short label for the UI, e.g. "On-device · qwen2.5:3b".
+export function llmLabel(): string | null {
+  const p = llmProvider();
+  if (p === "ollama") return `On-device · ${ollamaModel()}`;
+  if (p === "anthropic") return "Claude";
+  return null;
+}
+
+// Whether the local model is loaded right now, and how much of it sits in GPU memory.
+export async function ollamaStatus(): Promise<{ model: string; loaded: boolean; vramBytes: number } | null> {
+  const base = process.env.OLLAMA_URL?.trim().replace(/\/+$/, "");
+  if (!base) return null;
+  const model = ollamaModel();
+  try {
+    const res = await fetch(`${base}/api/ps`, { signal: AbortSignal.timeout(800), cache: "no-store" });
+    if (!res.ok) return { model, loaded: false, vramBytes: 0 };
+    const json = (await res.json()) as { models?: Array<{ name?: string; model?: string; size_vram?: number }> };
+    const hit = json.models?.find((m) => m.name === model || m.model === model);
+    return { model, loaded: Boolean(hit), vramBytes: hit?.size_vram ?? 0 };
+  } catch {
+    return { model, loaded: false, vramBytes: 0 };
+  }
+}
+
 export function aiEnabled(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  return llmProvider() !== null;
+}
+
+// Reading photos needs Claude. In private mode photos stay on the device, so it is off.
+export function visionEnabled(): boolean {
+  return llmProvider() === "anthropic";
+}
+
+async function callOllama(system: string, messages: ChatTurn[], maxTokens: number): Promise<string> {
+  const base = process.env.OLLAMA_URL?.trim().replace(/\/+$/, "");
+  if (!base) throw new AiUnavailableError("OLLAMA_URL is not set");
+  let res: Response;
+  try {
+    res = await fetch(`${base}/api/chat`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        model: ollamaModel(),
+        stream: false,
+        keep_alive: -1, // stay loaded: a cold load takes ~15 s on the Jetson
+        // The snapshot Vera reasons over is long; the default context would truncate it.
+        options: { num_ctx: 8192, num_predict: Math.min(maxTokens, 400), temperature: 0.4 },
+        messages: [{ role: "system", content: system }, ...messages],
+      }),
+      signal: AbortSignal.timeout(OLLAMA_TIMEOUT_MS),
+      cache: "no-store",
+    });
+  } catch (err) {
+    const timedOut = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+    throw new AiUnavailableError(timedOut ? "Local model timed out" : "Could not reach the local model");
+  }
+  if (!res.ok) throw new AiUnavailableError(`Local model returned ${res.status}`);
+  const json = (await res.json().catch(() => null)) as { message?: { content?: string } } | null;
+  const text = json?.message?.content?.trim();
+  if (!text) throw new AiUnavailableError("Local model returned an empty answer");
+  return text;
 }
 
 type ContentBlock =
@@ -84,6 +174,7 @@ export async function askClaude(system: string, turns: ChatTurn[], maxTokens = 6
   if (!messages.length || messages[messages.length - 1].role !== "user") {
     throw new AiUnavailableError("Nothing to answer");
   }
+  if (llmProvider() === "ollama") return callOllama(system, messages, maxTokens);
   return callMessages({ system, messages, maxTokens });
 }
 

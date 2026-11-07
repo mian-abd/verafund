@@ -8,6 +8,7 @@ import {
   IMAGE_MEDIA_TYPES,
   aiEnabled,
   askClaude,
+  visionEnabled,
   extractPurchaseFromImage,
   type ImageMediaType,
 } from "@/lib/ai";
@@ -81,7 +82,7 @@ export async function analyzePurchaseAction(formData: FormData) {
       if (!IMAGE_MEDIA_TYPES.includes(mediaType)) throw new UserError("Upload a JPG, PNG, WebP or GIF image.");
 
       // Only call vision when something is still missing; typed values always win.
-      if ((!item || priceCents === null) && aiEnabled()) {
+      if ((!item || priceCents === null) && visionEnabled()) {
         try {
           const base64 = Buffer.from(await photo.arrayBuffer()).toString("base64");
           const read = await extractPurchaseFromImage(base64, mediaType);
@@ -103,8 +104,8 @@ export async function analyzePurchaseAction(formData: FormData) {
 
     if (!item && priceCents === null) {
       throw new UserError(
-        hasPhoto && !aiEnabled()
-          ? "Reading photos needs the AI connection, which is offline. Type the item name and price."
+        hasPhoto && !visionEnabled()
+          ? "Photo reading is off (it needs Claude, and private mode keeps photos on this device). Type the item name and price."
           : "Enter an item name and price, or upload a photo.",
       );
     }

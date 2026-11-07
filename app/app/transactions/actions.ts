@@ -12,6 +12,7 @@ import { scorePurchase, parseRiskSignals, severityOf, type RiskSignal } from "@/
 import { formatCents, parseDollarsToCents } from "@/lib/format";
 import { GuardError, WorkspaceMissingError } from "@/lib/guard";
 import { jevTriage } from "@/lib/jev";
+import { logDecision } from "@/lib/decision";
 import { getWorkspaceId } from "@/lib/session";
 
 const BACK = "/app/transactions";
@@ -69,7 +70,16 @@ export async function simulatePurchaseAction(formData: FormData) {
     });
 
     // Jev adds advisory evidence with 0 points; the rule score alone sets the status.
+    const triageStarted = Date.now();
     const evidence: RiskSignal[] = await jevTriage(purchase, result.signals, result.score);
+    await logDecision({
+      workspaceId,
+      purpose: "fraud_triage",
+      engine: evidence.length ? "jev" : "rules",
+      input: `${merchant} ${formatCents(amountCents)} (${category}, ${country})`,
+      output: { score: result.score, severity: result.severity, jev: evidence.map((e) => e.detail) },
+      latencyMs: Date.now() - triageStarted,
+    });
     const signals = [...result.signals, ...evidence];
     const flagged = result.severity === "high";
 

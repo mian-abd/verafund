@@ -32,12 +32,15 @@ export const CATEGORY_BUDGETS: Record<string, number> = {
   subscriptions: 7000,
 };
 
-// Subscription merchants and prices mirror the guarded subscriptions so the
-// history and the cards tell the same story.
-const SUBSCRIPTION_HISTORY = [
+// The first three mirror the guarded subscriptions so the history and the cards tell the
+// same story. Hulu and iCloud+ have no card yet: "Find my subscriptions" discovers them,
+// and Hulu's last charge went up (hikedCents applies to charges in the last 35 days).
+const SUBSCRIPTION_HISTORY: Array<{ merchant: string; cents: number; day: number; hikedCents?: number }> = [
   { merchant: "Netflix", cents: 1599, day: 12 },
   { merchant: "Spotify", cents: 1199, day: 8 },
   { merchant: "Planet Fitness", cents: 2499, day: 5 },
+  { merchant: "Hulu", cents: 999, day: 18, hikedCents: 1199 },
+  { merchant: "iCloud+", cents: 299, day: 3 },
 ];
 
 export async function seedFinance(db: Db, workspaceId: string, now: number): Promise<void> {
@@ -103,7 +106,7 @@ export async function seedFinance(db: Db, workspaceId: string, now: number): Pro
     if (dom === 22) add(at(d, 8), -5700, "Comcast Internet", "utilities");
     if (dom === 15) add(at(d, 8), -4500, "T-Mobile", "utilities");
     for (const s of SUBSCRIPTION_HISTORY) {
-      if (dom === s.day) add(at(d, 7), -s.cents, s.merchant, "subscriptions", creditId);
+      if (dom === s.day) add(at(d, 7), -(s.hikedCents && d >= 55 ? s.hikedCents : s.cents), s.merchant, "subscriptions", creditId);
     }
     if (dom === 28) add(at(d, 12), -30000, "Transfer to Savings", "transfer", checkingId, "Monthly savings goal");
 
