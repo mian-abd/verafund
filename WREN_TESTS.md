@@ -1,6 +1,16 @@
 # Wren test scripts
 
-Paste each one into Wren as its own test. Replace `<APP_URL>` with the production URL. Every run starts its own isolated demo workspace, so runs never interfere with each other and can be repeated.
+**The fastest way is the CLI.** `seldon.yml` already holds W1 and W2 (W3 and W4 are marked `skip: true`). On Windows the CLI runs in Docker:
+
+```bash
+bash scripts/seldon.sh validate     # free: checks the file, the target and your plan
+bash scripts/seldon.sh run --wait   # costs 1 simulation per case (2 for W1 and W2)
+bash scripts/seldon.sh report       # verdicts for the last run
+```
+
+Make sure https://verafund.vercel.app/api/health returns `"ok":true` before you spend simulations.
+
+To use the web app instead, paste each script below into Wren as its own test. Replace `<APP_URL>` with the production URL. Every run starts its own isolated demo workspace, so runs never interfere with each other and can be repeated.
 
 To be prize-eligible, run **W1 and W2 against the final build**, and rerun both after the last deploy.
 
