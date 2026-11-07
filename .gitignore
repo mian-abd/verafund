@@ -30,3 +30,6 @@ Thumbs.db
 
 # local tooling
 .claude/
+
+# seldon CLI local state
+.seldon/
