@@ -15,14 +15,14 @@ describe("lithicReason", () => {
 
 describe("reconcile names the card network", () => {
   it("keeps the policy's own wording when the network agrees", () => {
-    const local = { approved: false, reason: "above_limit" as const, text: "$18.99 is above your $15.99 limit" };
+    const local = { approved: false as const, reason: "above_limit" as const, text: "$18.99 is above your $15.99 limit" };
     expect(reconcile(local, { approved: false, reason: "spending_controls" }, "Lithic")).toEqual(local);
   });
 
   it("says which network approved or declined", () => {
-    const declined = { approved: false, reason: "above_limit" as const, text: "x" };
+    const declined = { approved: false as const, reason: "above_limit" as const, text: "x" };
     expect(reconcile(declined, { approved: true, reason: null }, "Lithic").text).toMatch(/^Approved by Lithic/);
-    const ok = { approved: true, reason: null, text: "Within your limit" };
+    const ok = { approved: true as const, reason: null, text: "Within your limit" };
     expect(reconcile(ok, { approved: false, reason: "card_inactive" }, "Lithic").text).toBe("Card is inactive at Lithic");
     expect(typeof decide).toBe("function");
   });

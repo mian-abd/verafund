@@ -227,3 +227,20 @@ export function payoffPlan(
   if (balance > 0) return null;
   return { months, totalInterestCents: interest, totalPaidCents: balanceCents + interest };
 }
+
+// ---------- Hours of your life (additive helpers) ----------
+
+// Hours of after-tax work that `cents` costs. Same rounding as `analyzePurchase`.
+// Null when there is no usable hourly rate.
+export function hoursOfWorkFor(cents: number, afterTaxHourlyCents: number): number | null {
+  if (!(afterTaxHourlyCents > 0) || !Number.isFinite(cents)) return null;
+  return round1(Math.max(0, cents) / afterTaxHourlyCents);
+}
+
+// "3 hours", "1 hour", "1.5 hours". Anything under 0.1 hours reads as minutes, not "0 hours".
+export function formatHours(hours: number): string {
+  if (!Number.isFinite(hours) || hours < 0.1) return "under 6 minutes";
+  const rounded = round1(hours);
+  const text = rounded.toLocaleString("en-US", { maximumFractionDigits: 1 });
+  return `${text} ${rounded === 1 ? "hour" : "hours"}`;
+}

@@ -223,3 +223,65 @@ export function parseExtraction(text: string): ExtractedPurchase {
     return { item: null, priceCents: null };
   }
 }
+
+// ---------- Photo autofill: item, price and store (additive) ----------
+
+export interface ExtractedPurchaseWithStore extends ExtractedPurchase {
+  /** Retailer printed on the receipt or tag, e.g. "Best Buy". Null when not visible. */
+  store: string | null;
+}
+
+// A store or retailer name from a model reply or a form field: one short plain line, or null.
+export function cleanStoreName(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const s = value
+    .replace(/[\u0000-\u001f\u007f<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
+  if (s.length < 2) return null;
+  if (/^(n\/a|none|null|unknown|not visible|not shown|unreadable|store|retailer)$/i.test(s)) return null;
+  return s;
+}
+
+// Same JSON as `parseExtraction`, plus the store. Never throws.
+export function parseExtractionWithStore(text: string): ExtractedPurchaseWithStore {
+  const base = parseExtraction(text);
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return { ...base, store: null };
+  try {
+    const raw = JSON.parse(match[0]) as { store?: unknown };
+    return { ...base, store: cleanStoreName(raw.store) };
+  } catch {
+    return { ...base, store: null };
+  }
+}
+
+// Vision: like `extractPurchaseFromImage`, and also reads the retailer when it is visible.
+// Throws AiUnavailableError when Claude cannot be reached; callers show "type it instead".
+export async function extractPurchaseWithStore(
+  base64: string,
+  mediaType: ImageMediaType,
+): Promise<ExtractedPurchaseWithStore> {
+  const text = await callMessages({
+    // Headroom for the model's own reasoning, which counts against max_tokens.
+    maxTokens: 1024,
+    system:
+      "You read photos of products, price tags and receipts. Reply with only a JSON object " +
+      '{"item": string|null, "price": number|null, "store": string|null}. "item" is a short product name (max 60 characters). ' +
+      '"price" is the total price in US dollars as a plain number (for a receipt, the total paid). ' +
+      '"store" is the retailer or store name when it is printed on the receipt, price tag or shelf label, or clearly ' +
+      'visible in the photo (for example "Best Buy"). Do not guess the store from the product brand alone. ' +
+      "Use null for anything you cannot read. No other text.",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
+          { type: "text", text: "What is the item, its price, and the store?" },
+        ],
+      },
+    ],
+  });
+  return parseExtractionWithStore(text);
+}

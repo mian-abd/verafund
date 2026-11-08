@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, Loader2, Sparkles, X } from "lucide-react";
 import { analyzePurchaseAction } from "@/app/app/analyzer/actions";
 import { SubmitButton } from "@/components/ui";
+import { applyPhotoRead, clearPhotoFill, EMPTY_FILL, parsePhotoRead, type FillState } from "./photo-fill";
 
 const MAX_BYTES = 5 * 1024 * 1024;
+// Slightly longer than the server's own 25 s Claude timeout, so the server answers first.
+const READ_TIMEOUT_MS = 30_000;
+const READ_FAILED = "I couldn't read that photo, type the item and price";
 // Server actions accept ~1 MB bodies by default, so big photos are shrunk in the browser first.
 const SHRINK_ABOVE_BYTES = 700 * 1024;
 const MAX_EDGE = 1400;
@@ -33,8 +37,11 @@ async function shrinkImage(file: File): Promise<File> {
 }
 
 export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: string | null }) {
-  const [item, setItem] = useState("");
-  const [price, setPrice] = useState("");
+  const [fields, setFields] = useState<FillState>(EMPTY_FILL);
+  const [store, setStore] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+  const [readFailed, setReadFailed] = useState(false);
+  const readController = useRef<AbortController | null>(null);
   const [photoName, setPhotoName] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -46,10 +53,62 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
     };
   }, [previewUrl]);
 
+  // Leaving the page cancels a read that is still running.
+  useEffect(() => () => readController.current?.abort(), []);
+
+  function cancelRead() {
+    readController.current?.abort();
+    readController.current = null;
+    setReading(false);
+  }
+
   function clearPhoto() {
     if (fileInput.current) fileInput.current.value = "";
+    cancelRead();
     setPhotoName(null);
     setPreviewUrl(null);
+    setStore(null);
+    setReadFailed(false);
+    // What the photo filled goes with it; anything the user typed stays.
+    setFields(clearPhotoFill);
+  }
+
+  // Sends the photo to Claude right away and fills Item and Price. Typed values win.
+  // The form keeps working if this fails: the server action reads the photo again on submit.
+  async function readPhoto(file: File) {
+    readController.current?.abort();
+    const controller = new AbortController();
+    readController.current = controller;
+    const timer = setTimeout(() => controller.abort(), READ_TIMEOUT_MS);
+    setReading(true);
+    setReadFailed(false);
+    setStore(null);
+
+    const fail = () => {
+      setReadFailed(true);
+      setStore(null);
+      setFields(clearPhotoFill);
+    };
+    try {
+      const body = new FormData();
+      body.append("photo", file);
+      const res = await fetch("/api/analyzer/extract", { method: "POST", body, signal: controller.signal });
+      const data: unknown = await res.json().catch(() => null);
+      if (readController.current !== controller) return; // a newer photo or a removal took over
+      const read = res.ok ? parsePhotoRead(data) : null;
+      if (!read) return fail();
+      setFields((prev) => applyPhotoRead(prev, read));
+      setStore(read.store);
+    } catch {
+      if (readController.current !== controller) return;
+      fail();
+    } finally {
+      clearTimeout(timer);
+      if (readController.current === controller) {
+        readController.current = null;
+        setReading(false);
+      }
+    }
   }
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -77,6 +136,7 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
     }
     setPhotoName(file.name);
     setPreviewUrl(URL.createObjectURL(small));
+    if (aiOnline) void readPhoto(small);
   }
 
   const shownError = photoError ?? error;
@@ -112,8 +172,8 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
             maxLength={80}
             autoComplete="off"
             placeholder="Noise-cancelling headphones"
-            value={item}
-            onChange={(e) => setItem(e.target.value)}
+            value={fields.item}
+            onChange={(e) => setFields((p) => ({ ...p, item: e.target.value, itemFromPhoto: false }))}
             data-testid="analyzer-item"
             className="block w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
           />
@@ -133,8 +193,8 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
               inputMode="decimal"
               autoComplete="off"
               placeholder="199.00"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              value={fields.price}
+              onChange={(e) => setFields((p) => ({ ...p, price: e.target.value, priceFromPhoto: false }))}
               data-testid="analyzer-price"
               className="block w-full rounded-xl border border-input bg-background py-2.5 pl-7 pr-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
@@ -180,9 +240,33 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
             </div>
           )}
         </div>
+        {/* The store the photo showed, sent with the form so the price comparison knows where you were going to buy. */}
+        <input type="hidden" name="store" value={store ?? ""} data-testid="analyzer-store-input" />
+        {reading && (
+          <p role="status" data-testid="analyzer-reading" className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 size={14} aria-hidden="true" className="animate-spin" />
+            Reading your photo…
+          </p>
+        )}
+        {!reading && readFailed && (
+          <p role="alert" data-testid="analyzer-read-error" className="text-sm text-destructive">
+            {READ_FAILED}
+          </p>
+        )}
+        {!reading && (fields.itemFromPhoto || fields.priceFromPhoto || store) && (
+          <div data-testid="analyzer-photo-note" className="space-y-0.5 text-xs text-muted-foreground">
+            {(fields.itemFromPhoto || fields.priceFromPhoto) && (
+              <p className="flex items-center gap-1.5 font-medium text-foreground">
+                <Sparkles size={12} aria-hidden="true" className="text-primary" />
+                Filled from your photo
+              </p>
+            )}
+            {store && <p data-testid="analyzer-store">Store: {store}</p>}
+          </div>
+        )}
         <p className="text-xs text-muted-foreground" data-testid="analyzer-vision-note">
           {aiOnline
-            ? "Claude will read the item and price from your photo. Anything you type overrides it."
+            ? "Claude reads the item, price and store as soon as you pick a photo. Anything you type overrides it."
             : "Photo reading is offline right now, so type the item and price. The analysis works the same."}
         </p>
       </div>

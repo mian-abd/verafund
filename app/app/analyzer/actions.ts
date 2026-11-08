@@ -8,6 +8,7 @@ import {
   IMAGE_MEDIA_TYPES,
   aiEnabled,
   askClaude,
+  cleanStoreName,
   visionEnabled,
   extractPurchaseFromImage,
   type ImageMediaType,
@@ -70,6 +71,8 @@ export async function analyzePurchaseAction(formData: FormData) {
       throw new UserError(`Enter a price like 49.99 (between $0.01 and ${formatCents(MAX_CHARGE_CENTS)}).`);
     }
     let item = typedItem;
+    // The store the photo autofill read (hidden form field); null when there was none.
+    const store = cleanStoreName(formData.get("store"));
 
     const photo = formData.get("photo");
     const hasPhoto = photo instanceof File && photo.size > 0;
@@ -127,6 +130,7 @@ export async function analyzePurchaseAction(formData: FormData) {
       source: usedPhoto ? "photo" : "typed",
       aiExtracted,
       explanation,
+      store,
     };
 
     checkId = randomUUID();

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Camera, CircleAlert, CircleCheck, CircleX, Clock, PiggyBank, Sparkles, Wallet } from "lucide-react";
 import type { StoredAnalysis } from "@/app/app/analyzer/stored";
 import { formatCents, formatDateTime } from "@/lib/format";
-import { formatWeeks, VERDICT_LABEL, type Verdict } from "@/lib/purchase";
+import { formatHours, formatWeeks, VERDICT_LABEL, type Verdict } from "@/lib/purchase";
+import { OtherStores } from "./OtherStores";
 
 const VERDICT_STYLE: Record<Verdict, { chip: string; panel: string; Icon: typeof CircleCheck }> = {
   affordable: {
@@ -22,14 +23,17 @@ const VERDICT_STYLE: Record<Verdict, { chip: string; panel: string; Icon: typeof
   },
 };
 
-export function VerdictChip({ verdict }: { verdict: Verdict }) {
+export function VerdictChip({ verdict, size = "sm" }: { verdict: Verdict; size?: "sm" | "lg" }) {
   const { chip, Icon } = VERDICT_STYLE[verdict];
+  const big = size === "lg";
   return (
     <span
       data-testid="verdict-chip"
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${chip}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border font-bold ${chip} ${
+        big ? "px-3.5 py-1 text-sm" : "px-2.5 py-0.5 text-xs"
+      }`}
     >
-      <Icon size={13} aria-hidden="true" />
+      <Icon size={big ? 16 : 13} aria-hidden="true" />
       {VERDICT_LABEL[verdict]}
     </span>
   );
@@ -52,10 +56,16 @@ export function AnalysisResult({
   item,
   createdAt,
   analysis,
+  checkId,
+  compareEnabled = false,
 }: {
   item: string;
   createdAt: number;
   analysis: StoredAnalysis;
+  /** The saved check's id. Without it the "Cheaper elsewhere" section is left out. */
+  checkId?: string;
+  /** False in private mode: no web search, and the section says so. */
+  compareEnabled?: boolean;
 }) {
   const a = analysis;
   const { panel } = VERDICT_STYLE[a.verdict];
@@ -85,10 +95,44 @@ export function AnalysisResult({
             )}
           </p>
         </div>
-        <VerdictChip verdict={a.verdict} />
       </div>
 
+      {/* Headline: what this costs in hours of the user's life. */}
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 md:p-5" data-testid="hours-headline">
+        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <Clock size={13} aria-hidden="true" /> Hours of your life
+        </p>
+        {a.hoursOfWork !== null ? (
+          <>
+            <h3
+              className="mt-1 break-words text-2xl font-extrabold tracking-tight text-foreground md:text-3xl"
+              data-testid="hours-headline-text"
+            >
+              This costs {formatHours(a.hoursOfWork)} of your life
+            </h3>
+            <p className="mt-1.5 text-sm text-muted-foreground" data-testid="hours-explainer">
+              You earn about {formatCents(a.afterTaxHourlyCents)} an hour after tax, so {formatCents(a.priceCents)} takes{" "}
+              {formatHours(a.hoursOfWork)} of work.
+            </p>
+          </>
+        ) : (
+          <>
+            <h3 className="mt-1 text-xl font-bold tracking-tight text-foreground" data-testid="hours-headline-text">
+              How many hours of your life is this?
+            </h3>
+            <p className="mt-1.5 text-sm text-muted-foreground" data-testid="hours-explainer">
+              Your hourly rate isn&apos;t set, so {formatCents(a.priceCents)} can&apos;t be turned into hours of work yet.
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* Verdict */}
       <div className={`rounded-xl border p-4 ${panel}`} data-testid="verdict-reasons">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-base font-bold text-foreground">Worth it?</h3>
+          <VerdictChip verdict={a.verdict} size="lg" />
+        </div>
         <p className="mb-2 text-sm font-semibold text-foreground">Why: {VERDICT_LABEL[a.verdict]}</p>
         <ul className="space-y-1.5 text-sm text-foreground">
           {a.reasons.map((r, i) => (
@@ -99,6 +143,17 @@ export function AnalysisResult({
           ))}
         </ul>
       </div>
+
+      {checkId && (
+        <OtherStores
+          key={checkId}
+          checkId={checkId}
+          priceCents={a.priceCents}
+          afterTaxHourlyCents={a.afterTaxHourlyCents}
+          enabled={compareEnabled}
+          initial={a.compare ?? null}
+        />
+      )}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat

@@ -1,6 +1,8 @@
 // What a purchase check saves in `purchase_checks.analysis` (JSON text), and how it is read back.
 
+import { cleanStoreName } from "@/lib/ai";
 import { spendByCategory, startOfMonth, type Finance } from "@/lib/finance";
+import { parseSavedCompare, type SavedCompare } from "@/lib/price-compare";
 import { discretionaryRemaining, monthlySavingsPace, type PurchaseAnalysis, type PurchaseInput } from "@/lib/purchase";
 
 export type PurchaseSource = "typed" | "photo";
@@ -11,6 +13,10 @@ export interface StoredAnalysis extends PurchaseAnalysis {
   aiExtracted: boolean;
   /** Claude's plain-English explanation; null when AI was offline. */
   explanation: string | null;
+  /** Store the user was going to buy from, read from their photo (e.g. "Best Buy"). */
+  store?: string | null;
+  /** Cheaper offers found by the web search; saved by /api/analyzer/compare. Absent until it ran. */
+  compare?: SavedCompare | null;
 }
 
 export function buildPurchaseInput(finance: Finance, priceCents: number): PurchaseInput {
@@ -46,6 +52,8 @@ export function parseStored(json: string): StoredAnalysis | null {
       source: raw.source === "photo" ? "photo" : "typed",
       aiExtracted: Boolean(raw.aiExtracted),
       explanation: typeof raw.explanation === "string" ? raw.explanation : null,
+      store: cleanStoreName(raw.store),
+      compare: parseSavedCompare(raw.compare),
     };
   } catch {
     return null;

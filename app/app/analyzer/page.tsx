@@ -53,7 +53,13 @@ export default async function AnalyzerPage({
       <AnalyzerForm key={selected?.id ?? "new"} aiOnline={visionEnabled()} error={error ?? (missingCheck ? "That check could not be found." : null)} />
 
       {selected && analysis && (
-        <AnalysisResult item={selected.item} createdAt={selected.createdAt} analysis={analysis} />
+        <AnalysisResult
+          item={selected.item}
+          createdAt={selected.createdAt}
+          analysis={analysis}
+          checkId={selected.id}
+          compareEnabled={visionEnabled()}
+        />
       )}
 
       <CheckHistory
