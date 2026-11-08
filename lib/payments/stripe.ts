@@ -98,3 +98,19 @@ export const stripePayments: PaymentsAdapter = {
     return { approved: auth.approved, reason: last?.reason ?? null, authorizationId: auth.id };
   },
 };
+
+// The full test card number, expiry and CVC of a sandbox card, for the "Show card details"
+// view. Only sandbox keys are accepted (see stripe()), so these are never real card numbers.
+export async function stripeCardDetails(
+  cardId: string,
+): Promise<{ number: string; cvc: string; expMonth: number; expYear: number; brand: string; last4: string }> {
+  const card = await stripe().issuing.cards.retrieve(cardId, { expand: ["number", "cvc"] });
+  return {
+    number: card.number ?? "",
+    cvc: card.cvc ?? "",
+    expMonth: card.exp_month,
+    expYear: card.exp_year,
+    brand: card.brand,
+    last4: card.last4,
+  };
+}

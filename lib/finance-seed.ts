@@ -88,35 +88,79 @@ export async function seedFinance(db: Db, workspaceId: string, now: number): Pro
     });
   };
 
-  const start = now - 90 * DAY;
+  // History starts on the 1st, four months back, so the monthly charts show whole months.
+  const startDate = new Date(now);
+  startDate.setMonth(startDate.getMonth() - 4, 1);
+  startDate.setHours(0, 0, 0, 0);
+  const start = startDate.getTime();
+  const days = Math.floor((now - start) / DAY);
   const at = (dayOffset: number, hour: number) => {
     const d = new Date(start + dayOffset * DAY);
     d.setHours(hour, between(0, 59), 0, 0);
     return d.getTime();
   };
 
-  // Bi-weekly payroll.
-  for (let d = 4; d <= 90; d += 14) add(at(d, 10), 120000, "Campus IT - Payroll", "income", checkingId, "Bi-weekly payroll deposit");
+  // Bi-weekly payroll that moves with the hours actually worked (finals week is thin,
+  // an extra shift or two shows up now and then).
+  // Anchored so the latest payday was three days ago.
+  for (let d = days - 3; d >= 0; d -= 14) {
+    const hours = between(58, 76);
+    add(at(d, 10), Math.round(hours * 2000 * 0.82), "Campus IT - Payroll", "income", checkingId, `Bi-weekly payroll · ${hours} hrs`);
+  }
 
-  for (let d = 0; d <= 90; d++) {
+  // Each month has its own mood: some are tight, some get away from you.
+  const monthMood = new Map<string, number>();
+  const mood = (date: Date) => {
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    if (!monthMood.has(key)) monthMood.set(key, 0.75 + rand() * 0.6);
+    return monthMood.get(key)!;
+  };
+  // A few one-off hits that real months have, on random days.
+  const oneOffs: Array<{ day: number; cents: number; merchant: string; category: string; note: string }> = [
+    { day: between(3, 12), cents: between(18000, 26000), merchant: "Campus Bookstore", category: "shopping", note: "Textbooks" },
+    { day: between(30, 70), cents: between(24000, 36000), merchant: "Delta Air Lines", category: "transport", note: "Flight home" },
+    { day: between(40, 100), cents: between(16000, 42000), merchant: "Midas", category: "transport", note: "Brake pads" },
+    { day: between(20, 110), cents: between(8500, 15000), merchant: "Ticketmaster", category: "entertainment", note: "Concert tickets" },
+    { day: between(10, 110), cents: between(6000, 9500), merchant: "The Cheesecake Factory", category: "food", note: "Birthday dinner" },
+    { day: between(50, 115), cents: between(9000, 18000), merchant: "Costco", category: "food", note: "Bulk run" },
+  ];
+  for (const o of oneOffs) {
+    if (o.day <= days) add(at(o.day, between(11, 20)), -o.cents, o.merchant, o.category, creditId, o.note);
+  }
+
+  for (let d = 0; d <= days; d++) {
     const date = new Date(start + d * DAY);
     const dom = date.getDate();
+    const dow = date.getDay(); // 0 Sunday … 6 Saturday
+    const weekend = dow === 5 || dow === 6;
+    const m = mood(date);
+    const scaled = (lo: number, hi: number) => Math.round(between(lo, hi) * m);
+
     if (dom === 1) add(at(d, 9), -87500, "Maple Apartments", "housing", checkingId, "Monthly rent (shared apartment)");
     if (dom === 20) add(at(d, 8), -2800, "DTE Energy", "utilities", checkingId, "Electric bill (1/3 split)");
     if (dom === 22) add(at(d, 8), -5700, "Comcast Internet", "utilities");
     if (dom === 15) add(at(d, 8), -4500, "T-Mobile", "utilities");
     for (const s of SUBSCRIPTION_HISTORY) {
-      if (dom === s.day) add(at(d, 7), -(s.hikedCents && d >= 55 ? s.hikedCents : s.cents), s.merchant, "subscriptions", creditId);
+      const recent = start + d * DAY >= now - 35 * DAY;
+      if (dom === s.day) add(at(d, 7), -(s.hikedCents && recent ? s.hikedCents : s.cents), s.merchant, "subscriptions", creditId);
     }
     if (dom === 28) add(at(d, 12), -30000, "Transfer to Savings", "transfer", checkingId, "Monthly savings goal");
+    // Roommates pay back their share of internet and power a few days into the month.
+    if (dom === between(2, 6) && rand() < 0.8) add(at(d, 19), between(2400, 4300), "Venmo - Jordan", "income", checkingId, "Utilities split");
+    // Weekend delivery shifts.
+    if (dow === 1 && rand() < 0.45) add(at(d, 9), between(3800, 16500), "DoorDash - Dasher payout", "income", checkingId, "Weekly payout");
 
-    // Everyday spending with a little randomness.
-    if (rand() < 0.3) add(at(d, between(10, 20)), -between(2500, 9000), pick(["Trader Joe's", "Kroger", "Whole Foods", "Aldi"]), "food");
-    if (rand() < 0.45) add(at(d, between(8, 21)), -between(500, 3200), pick(["Starbucks", "Chipotle", "Uber Eats", "Taco Bell", "Panera Bread"]), "food", pick([checkingId, creditId]));
-    if (rand() < 0.14) add(at(d, between(7, 19)), -between(3000, 4800), pick(["Shell", "BP", "Speedway"]), "transport");
-    if (rand() < 0.07) add(at(d, between(17, 23)), -between(900, 2800), pick(["Uber", "Lyft"]), "transport", creditId);
-    if (rand() < 0.1) add(at(d, between(11, 22)), -between(1500, 12000), pick(["Amazon", "Target", "Best Buy", "Walmart"]), "shopping", creditId);
-    if (rand() < 0.06) add(at(d, between(18, 23)), -between(1200, 3500), pick(["AMC Theatres", "Steam", "Ticketmaster"]), "entertainment", creditId);
+    // Groceries: a big Sunday shop, plus top-ups.
+    if (dow === 0 && rand() < 0.75) add(at(d, between(10, 17)), -scaled(5200, 13800), pick(["Trader Joe's", "Kroger", "Aldi"]), "food");
+    else if (rand() < 0.12) add(at(d, between(17, 21)), -between(900, 3400), pick(["Kroger", "Whole Foods", "7-Eleven"]), "food");
+    // Eating out clusters on Fridays and Saturdays.
+    if (rand() < (weekend ? 0.7 : 0.32)) {
+      add(at(d, between(11, 22)), -scaled(weekend ? 1400 : 600, weekend ? 5200 : 2600), pick(["Starbucks", "Chipotle", "Uber Eats", "Taco Bell", "Panera Bread", "Raising Cane's"]), "food", pick([checkingId, creditId]));
+    }
+    if (rand() < 0.11) add(at(d, between(7, 19)), -between(2800, 5200), pick(["Shell", "BP", "Speedway"]), "transport");
+    if (rand() < (weekend ? 0.18 : 0.04)) add(at(d, between(20, 23)), -between(900, 3100), pick(["Uber", "Lyft"]), "transport", creditId);
+    if (rand() < 0.09 * m) add(at(d, between(11, 22)), -scaled(1200, 11000), pick(["Amazon", "Target", "Best Buy", "Walmart", "CVS Pharmacy"]), "shopping", creditId);
+    if (rand() < (weekend ? 0.12 : 0.03)) add(at(d, between(18, 23)), -between(1200, 3600), pick(["AMC Theatres", "Steam", "Dave & Buster's"]), "entertainment", creditId);
   }
   rows.sort((a, b) => (a.occurredAt as number) - (b.occurredAt as number));
   for (let i = 0; i < rows.length; i += 100) await db.insert(transactions).values(rows.slice(i, i + 100));

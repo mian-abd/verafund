@@ -5,6 +5,7 @@
 export const AI_MODEL = "claude-sonnet-5-5";
 const API_URL = "https://api.anthropic.com/v1/messages";
 const TIMEOUT_MS = 25_000;
+const MIN_OUTPUT_TOKENS = 1_024;
 
 export type ChatTurn = { role: "user" | "assistant"; content: string };
 export type ImageMediaType = "image/jpeg" | "image/png" | "image/webp" | "image/gif";
@@ -129,7 +130,9 @@ async function callMessages(body: {
       },
       body: JSON.stringify({
         model: AI_MODEL,
-        max_tokens: body.maxTokens,
+        // The model reasons before it answers and that counts against max_tokens, so a small
+        // budget can end before any text. Prompts keep answers short; this keeps room to think.
+        max_tokens: Math.max(body.maxTokens, MIN_OUTPUT_TOKENS),
         ...(body.system ? { system: body.system } : {}),
         messages: body.messages,
       }),

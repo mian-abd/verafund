@@ -6,6 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "./db/client";
 import { accounts, plaidItems, transactions } from "./db/schema";
 import { GuardError } from "./guard";
+import { openSecret, sealSecret } from "./crypto";
 
 const ENV = (process.env.PLAID_ENV || "sandbox").trim();
 const BASE = ENV === "production" ? "https://production.plaid.com" : "https://sandbox.plaid.com";
@@ -128,7 +129,7 @@ export async function connectBank(workspaceId: string, publicToken: string, inst
     id: itemRowId,
     workspaceId,
     itemId: exchange.item_id,
-    accessToken: exchange.access_token,
+    accessToken: sealSecret(exchange.access_token), // encrypted at rest
     institutionName: institutionName.slice(0, 60) || "Bank",
     cursor: null,
     importedCount: 0,
@@ -148,7 +149,7 @@ export async function syncBank(workspaceId: string, itemRowId: string) {
     .where(and(eq(plaidItems.id, itemRowId), eq(plaidItems.workspaceId, workspaceId)));
   if (!item) throw new GuardError("That bank connection doesn't exist in your workspace.");
 
-  const acc = await plaid<{ accounts: PlaidAccount[] }>("/accounts/get", { access_token: item.accessToken });
+  const acc = await plaid<{ accounts: PlaidAccount[] }>("/accounts/get", { access_token: openSecret(item.accessToken) });
   const accountIdMap = new Map<string, string>();
   const existingAccounts = await db.select().from(accounts).where(eq(accounts.workspaceId, workspaceId));
   for (const [i, a] of acc.accounts.entries()) {
@@ -181,7 +182,7 @@ export async function syncBank(workspaceId: string, itemRowId: string) {
   for (let attempt = 0, more = true; more && attempt < 12; attempt++) {
     const page = await plaid<{ added: PlaidTransaction[]; next_cursor: string; has_more: boolean }>(
       "/transactions/sync",
-      { access_token: item.accessToken, cursor, count: 250 },
+      { access_token: openSecret(item.accessToken), cursor, count: 250 },
     );
     added.push(...page.added);
     cursor = page.next_cursor;

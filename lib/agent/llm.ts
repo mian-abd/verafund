@@ -112,7 +112,7 @@ async function anthropicToolCall(args: {
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({
       model: AI_MODEL,
-      max_tokens: args.maxTokens,
+      max_tokens: Math.max(args.maxTokens, 1_024), // room for the model's reasoning before the tool call
       system: args.system,
       messages,
       tools: args.tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.parameters })),
