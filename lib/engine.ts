@@ -111,6 +111,7 @@ export function reconcile(local: Decision, provider: ProviderResult, network = "
     case "card_inactive":
       return local.approved ? decline("card_paused", `Card is inactive at ${network}`) : local;
     case "spending_controls":
+    case "authorization_controls":
       return local.approved ? decline("provider_declined", `Declined by ${network} spending controls`) : local;
     default:
       return local.approved
