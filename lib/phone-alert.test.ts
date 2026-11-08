@@ -12,7 +12,9 @@ describe("call tokens", () => {
 
   it("round-trips the workspace and transaction", () => {
     const token = signCallToken("ws-1", "tx-1", 1_000);
-    expect(verifyCallToken(token, 2_000)).toEqual({ workspaceId: "ws-1", transactionId: "tx-1" });
+    expect(verifyCallToken(token, 2_000)).toEqual({ workspaceId: "ws-1", subjectId: "tx-1", kind: "fraud" });
+    const price = signCallToken("ws-1", "ch-1", 1_000, "price");
+    expect(verifyCallToken(price, 2_000)).toEqual({ workspaceId: "ws-1", subjectId: "ch-1", kind: "price" });
   });
 
   it("rejects an expired token", () => {
@@ -46,6 +48,9 @@ describe("spoken answers", () => {
     ["it was not me", "no"],
     ["block it", "no"],
     ["yes block it", "no"],
+    ["approve it", "yes"],
+    ["okay go ahead", "yes"],
+    ["no keep blocking it", "no"],
     ["hmm what", null],
   ])("%s -> %s", (text, want) => {
     expect(heardDecision(text)).toBe(want);

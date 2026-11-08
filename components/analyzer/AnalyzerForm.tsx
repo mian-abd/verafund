@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, Loader2, Sparkles, X } from "lucide-react";
+import { Camera, ImagePlus, Loader2, Sparkles, X } from "lucide-react";
 import { analyzePurchaseAction } from "@/app/app/analyzer/actions";
 import { SubmitButton } from "@/components/ui";
 import { applyPhotoRead, clearPhotoFill, EMPTY_FILL, parsePhotoRead, type FillState } from "./photo-fill";
@@ -41,11 +41,25 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
   const [store, setStore] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
   const [readFailed, setReadFailed] = useState(false);
+  // The photo showed a product but no price anywhere (e.g. bread with no shelf tag in view).
+  const [noPriceFor, setNoPriceFor] = useState<string | null>(null);
   const readController = useRef<AbortController | null>(null);
   const [photoName, setPhotoName] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  // "Scan with camera" opens the phone's rear camera; the shot goes into the same photo
+  // field as an upload, so reading and submitting work the same way.
+  function onScan(e: React.ChangeEvent<HTMLInputElement>) {
+    const shot = e.currentTarget.files?.[0];
+    e.currentTarget.value = "";
+    if (!shot || !fileInput.current) return;
+    const dt = new DataTransfer();
+    dt.items.add(shot);
+    fileInput.current.files = dt.files;
+    fileInput.current.dispatchEvent(new Event("change", { bubbles: true }));
+  }
 
   useEffect(() => {
     return () => {
@@ -69,6 +83,7 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
     setPreviewUrl(null);
     setStore(null);
     setReadFailed(false);
+    setNoPriceFor(null);
     // What the photo filled goes with it; anything the user typed stays.
     setFields(clearPhotoFill);
   }
@@ -99,6 +114,7 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
       if (!read) return fail();
       setFields((prev) => applyPhotoRead(prev, read));
       setStore(read.store);
+      setNoPriceFor(read.priceCents === null ? (read.item ?? "the item") : null);
     } catch {
       if (readController.current !== controller) return;
       fail();
@@ -214,6 +230,23 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
             <ImagePlus size={16} aria-hidden="true" />
             {photoName ? "Change photo" : "Upload photo"}
           </label>
+          <label
+            htmlFor="analyzer-scan"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus-within:ring-2 focus-within:ring-ring/40"
+          >
+            <Camera size={16} aria-hidden="true" />
+            Scan with camera
+          </label>
+          <input
+            id="analyzer-scan"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={onScan}
+            data-testid="analyzer-scan"
+            className="sr-only"
+            aria-label="Scan a price tag or receipt with the camera"
+          />
           <input
             ref={fileInput}
             id="analyzer-photo"
@@ -246,6 +279,11 @@ export function AnalyzerForm({ aiOnline, error }: { aiOnline: boolean; error: st
           <p role="status" data-testid="analyzer-reading" className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 size={14} aria-hidden="true" className="animate-spin" />
             Reading your photo…
+          </p>
+        )}
+        {!reading && !readFailed && noPriceFor && (
+          <p role="status" data-testid="analyzer-no-price" className="text-sm text-amber-700 dark:text-amber-300">
+            I can see {noPriceFor}, but no price in the photo. Type the price, or snap it with the shelf tag in view.
           </p>
         )}
         {!reading && readFailed && (

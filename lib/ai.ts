@@ -267,9 +267,13 @@ export async function extractPurchaseWithStore(
     // Headroom for the model's own reasoning, which counts against max_tokens.
     maxTokens: 1024,
     system:
-      "You read photos of products, price tags and receipts. Reply with only a JSON object " +
-      '{"item": string|null, "price": number|null, "store": string|null}. "item" is a short product name (max 60 characters). ' +
-      '"price" is the total price in US dollars as a plain number (for a receipt, the total paid). ' +
+      "You read photos of products, price tags, shelf labels and receipts. Reply with only a JSON object " +
+      '{"item": string|null, "price": number|null, "store": string|null}. "item" is a short product name (max 60 characters); ' +
+      "for a photo taken in a store aisle, it is the product the photo is centered on. " +
+      '"price" is the price in US dollars as a plain number: for a receipt, the total paid; for a product on a shelf, the ' +
+      "selling price on its shelf label or price tag (use the sale price if one is shown, not the unit price per ounce or pound, " +
+      "and not a crossed-out \"was\" price). If no price is printed anywhere in the photo, price is null: never guess a price " +
+      "from what the product usually costs. " +
       '"store" is the retailer or store name when it is printed on the receipt, price tag or shelf label, or clearly ' +
       'visible in the photo (for example "Best Buy"). Do not guess the store from the product brand alone. ' +
       "Use null for anything you cannot read. No other text.",

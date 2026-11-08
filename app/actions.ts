@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { phoneAlertsConfigured, phoneAlertsOn, ringPriceHike } from "@/lib/phone-alert";
 import Stripe from "stripe";
 import {
   addSubscription,
@@ -75,7 +77,13 @@ export async function simulateChargeAction(formData: FormData) {
   await run(formData, async (ws) => {
     const cents = parseDollarsToCents(formData.get("amount"));
     if (cents === null) throw new GuardError("Enter an amount like 18.99 (between $0.01 and $10,000).");
-    await simulateCharge(ws, field(formData, "subscriptionId"), cents);
+    const result = await simulateCharge(ws, field(formData, "subscriptionId"), cents);
+    // A blocked price hike rings the owner's phone (if they turned phone alerts on).
+    if (!result.approved && result.reason === "above_limit" && phoneAlertsConfigured() && (await phoneAlertsOn(ws))) {
+      after(() =>
+        ringPriceHike({ workspaceId: ws, chargeId: result.chargeId, merchant: result.merchant, amountCents: cents, limitCents: result.limitCents }).then(() => undefined),
+      );
+    }
   });
 }
 

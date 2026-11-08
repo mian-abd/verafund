@@ -13,7 +13,7 @@ export function PhoneAlerts({ on }: { on: boolean }) {
         <div className="min-w-0">
           <h2 className="font-semibold text-foreground">Vera calls your phone</h2>
           <p className="text-sm text-muted-foreground">
-            When a charge looks like fraud, your phone rings with Vera. Answer to talk, or tap &ldquo;It was me&rdquo; or
+            When a charge looks like fraud or a subscription tries to raise its price, your phone rings with Vera. Answer to talk, or tap &ldquo;It was me&rdquo; or &ldquo;Approve&rdquo; and
             &ldquo;Block it&rdquo; right from the lock screen.
           </p>
         </div>

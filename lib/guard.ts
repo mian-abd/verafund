@@ -222,7 +222,11 @@ export async function jumpAhead(workspaceId: string, days: number): Promise<void
   for (const sub of subs) await lockTrialIfEnded(db, sub, now);
 }
 
-export async function simulateCharge(workspaceId: string, subscriptionId: string, amountCents: number) {
+export async function simulateCharge(
+  workspaceId: string,
+  subscriptionId: string,
+  amountCents: number,
+): Promise<{ chargeId: string; approved: boolean; reason: string | null; merchant: string; limitCents: number }> {
   const db = await getDb();
   const ws = await requireWorkspace(db, workspaceId);
   const now = workspaceNow(ws);
@@ -240,8 +244,9 @@ export async function simulateCharge(workspaceId: string, subscriptionId: string
     providerReason = result.reason;
   }
 
+  const chargeId = randomUUID();
   await db.insert(charges).values({
-    id: randomUUID(),
+    id: chargeId,
     workspaceId,
     subscriptionId: sub.id,
     merchant: sub.merchant,
@@ -289,6 +294,7 @@ export async function simulateCharge(workspaceId: string, subscriptionId: string
     subscriptionId: sub.id,
     createdAt: Date.now(),
   });
+  return { chargeId, approved: decision.approved, reason: decision.reason, merchant: sub.merchant, limitCents: sub.limitCents };
 }
 
 export async function approveNewPrice(workspaceId: string, chargeId: string): Promise<void> {

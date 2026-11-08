@@ -22,10 +22,13 @@ type Phase = "ringing" | "speaking" | "listening" | "sending" | "done" | "declin
 // play Vera's voice; then it listens for yes or no, with buttons as the fallback.
 export function IncomingCall(props: {
   token: string;
+  title: string;
   merchant: string;
   amountLabel: string;
-  riskScore: number;
+  detail: string;
   script: string;
+  yesLabel: string;
+  noLabel: string;
   settled: "yes" | "no" | null;
 }) {
   const [phase, setPhase] = useState<Phase>(props.settled ? "done" : "ringing");
@@ -122,13 +125,13 @@ export function IncomingCall(props: {
           </span>
         </div>
         <h1 className="text-3xl font-semibold">Vera</h1>
-        <p className="text-white/60">VeraFund fraud check</p>
+        <p className="text-white/60">{props.title}</p>
       </div>
 
       <div className="w-full max-w-sm rounded-2xl bg-white/5 border border-white/10 p-5 text-center space-y-1">
         <p className="text-4xl font-bold tabular-nums">{props.amountLabel}</p>
         <p className="text-white/80">at {props.merchant}</p>
-        <p className="text-xs text-white/50">Risk score {props.riskScore}/100</p>
+        <p className="text-xs text-white/50">{props.detail}</p>
         {phase !== "ringing" && phase !== "done" && <p className="pt-3 text-sm text-white/80">&ldquo;{props.script}&rdquo;</p>}
         {phase === "listening" && (
           <p className="pt-2 text-sm text-orange-300" aria-live="polite">
@@ -173,7 +176,7 @@ export function IncomingCall(props: {
               data-testid="call-yes"
               className="rounded-xl bg-white/10 border border-white/20 py-3 font-semibold"
             >
-              It was me
+              {props.yesLabel}
             </button>
             <button
               type="button"
@@ -181,7 +184,7 @@ export function IncomingCall(props: {
               data-testid="call-no"
               className="rounded-xl bg-red-600 py-3 font-semibold"
             >
-              Block it
+              {props.noLabel}
             </button>
           </div>
         )}

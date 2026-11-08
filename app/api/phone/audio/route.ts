@@ -1,7 +1,5 @@
-import { and, eq } from "drizzle-orm";
-import { getDb } from "@/lib/db/client";
-import { transactions } from "@/lib/db/schema";
-import { CALL_REPLIES, callScript, verifyCallToken } from "@/lib/phone-alert";
+import { verifyCallToken } from "@/lib/phone-alert";
+import { loadCallSubject } from "@/lib/phone-call";
 
 export const dynamic = "force-dynamic";
 
@@ -17,19 +15,10 @@ export async function GET(request: Request) {
   const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
   if (!apiKey) return new Response(null, { status: 204 });
 
+  const subject = await loadCallSubject(claim);
+  if (!subject) return new Response(null, { status: 404 });
   const kind = url.searchParams.get("kind");
-  let text: string;
-  if (kind === "yes" || kind === "no") {
-    text = CALL_REPLIES[kind];
-  } else {
-    const db = await getDb();
-    const [tx] = await db
-      .select()
-      .from(transactions)
-      .where(and(eq(transactions.id, claim.transactionId), eq(transactions.workspaceId, claim.workspaceId)));
-    if (!tx) return new Response(null, { status: 404 });
-    text = callScript(tx.merchant, Math.abs(tx.amountCents));
-  }
+  const text = kind === "yes" || kind === "no" ? subject.replies[kind] : subject.script;
 
   const voiceId = process.env.ELEVENLABS_VOICE_ID?.trim() || DEFAULT_VOICE_ID;
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {

@@ -37,12 +37,15 @@ function mac(payload: string): string {
   return createHmac("sha256", signingKey()).update(payload).digest("base64url");
 }
 
-export function signCallToken(workspaceId: string, transactionId: string, now = Date.now()): string {
-  const payload = Buffer.from(JSON.stringify({ w: workspaceId, t: transactionId, e: now + TOKEN_TTL_MS })).toString("base64url");
+// What the call is about: a flagged purchase (transaction id) or a blocked price hike (charge id).
+export type CallKind = "fraud" | "price";
+
+export function signCallToken(workspaceId: string, subjectId: string, now = Date.now(), kind: CallKind = "fraud"): string {
+  const payload = Buffer.from(JSON.stringify({ w: workspaceId, t: subjectId, e: now + TOKEN_TTL_MS, k: kind })).toString("base64url");
   return `${payload}.${mac(payload)}`;
 }
 
-export function verifyCallToken(token: string, now = Date.now()): { workspaceId: string; transactionId: string } | null {
+export function verifyCallToken(token: string, now = Date.now()): { workspaceId: string; subjectId: string; kind: CallKind } | null {
   const [payload, sig] = token.split(".");
   if (!payload || !sig) return null;
   let expected: string;
@@ -55,9 +58,9 @@ export function verifyCallToken(token: string, now = Date.now()): { workspaceId:
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   try {
-    const { w, t, e } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { w?: unknown; t?: unknown; e?: unknown };
+    const { w, t, e, k } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { w?: unknown; t?: unknown; e?: unknown; k?: unknown };
     if (typeof w !== "string" || typeof t !== "string" || typeof e !== "number" || e < now) return null;
-    return { workspaceId: w, transactionId: t };
+    return { workspaceId: w, subjectId: t, kind: k === "price" ? "price" : "fraud" };
   } catch {
     return null;
   }
@@ -72,6 +75,21 @@ export const CALL_REPLIES = {
   yes: "Thanks. I've marked it as yours and released the hold. Have a good day.",
   no: "Done. I blocked that charge, so no money moved. I'd keep an eye on that card. Goodbye.",
 } as const;
+
+// A subscription tried to charge more than its card allows and was declined.
+export function priceCallScript(merchant: string, amountCents: number, limitCents: number): string {
+  return (
+    `Hi, it's Vera. ${merchant} just tried to charge ${formatCents(amountCents)}, but your limit is ${formatCents(limitCents)}, ` +
+    `so I blocked it. Should I approve the new price? Say yes to approve it, or no and I'll keep blocking it.`
+  );
+}
+
+export function priceReplies(merchant: string, amountCents: number, limitCents: number): { yes: string; no: string } {
+  return {
+    yes: `Done. I raised the ${merchant} limit to ${formatCents(amountCents)}, so the new price goes through from now on.`,
+    no: `Okay, I'll keep blocking it. ${merchant} stays capped at ${formatCents(limitCents)} until you say otherwise.`,
+  };
+}
 
 // Per-workspace opt-in, so a visitor's test charge never rings the owner's phone by surprise.
 const optInKey = (workspaceId: string) => `phone_alerts:${workspaceId}`;
@@ -92,23 +110,66 @@ export async function setPhoneAlerts(workspaceId: string, on: boolean): Promise<
 
 const lastRing = new Map<string, number>();
 
-// Sends the alert. Returns false (never throws) when not configured, throttled or ntfy fails.
-export async function ringPhone(input: {
+// A flagged purchase: "was this you?"
+export function ringPhone(input: {
   workspaceId: string;
   transactionId: string;
   merchant: string;
   amountCents: number;
   riskScore: number;
 }): Promise<boolean> {
+  return sendRing({
+    workspaceId: input.workspaceId,
+    subjectId: input.transactionId,
+    kind: "fraud",
+    tags: ["rotating_light", "telephone_receiver"],
+    title: `Vera is calling: ${formatCents(input.amountCents)} at ${input.merchant}`,
+    message: `Risk ${input.riskScore}/100. Was this you? Answer to talk to Vera, or tap a button.`,
+    yesLabel: "It was me",
+    noLabel: "Block it",
+  });
+}
+
+// A blocked price hike: approve the new price, or keep blocking it.
+export function ringPriceHike(input: {
+  workspaceId: string;
+  chargeId: string;
+  merchant: string;
+  amountCents: number;
+  limitCents: number;
+}): Promise<boolean> {
+  return sendRing({
+    workspaceId: input.workspaceId,
+    subjectId: input.chargeId,
+    kind: "price",
+    tags: ["warning", "telephone_receiver"],
+    title: `Vera is calling: ${input.merchant} wants ${formatCents(input.amountCents)}`,
+    message: `Your limit is ${formatCents(input.limitCents)}, so Vera blocked it. Approve the new price, or keep blocking it?`,
+    yesLabel: `Approve ${formatCents(input.amountCents)}`,
+    noLabel: "Keep blocking",
+  });
+}
+
+// Sends the alert. Returns false (never throws) when not configured, throttled or ntfy fails.
+async function sendRing(input: {
+  workspaceId: string;
+  subjectId: string;
+  kind: CallKind;
+  tags: string[];
+  title: string;
+  message: string;
+  yesLabel: string;
+  noLabel: string;
+}): Promise<boolean> {
   const topic = process.env.NTFY_TOPIC?.trim();
   const base = appBaseUrl();
   if (!topic || !base) return false;
-  const key = `${input.workspaceId}:${input.transactionId}`;
+  const key = `${input.workspaceId}:${input.subjectId}`;
   const last = lastRing.get(key) ?? 0;
   if (Date.now() - last < 20_000) return false;
   lastRing.set(key, Date.now());
 
-  const token = signCallToken(input.workspaceId, input.transactionId);
+  const token = signCallToken(input.workspaceId, input.subjectId, Date.now(), input.kind);
   const callUrl = `${base}/call/${token}`;
   const answerUrl = (d: "yes" | "no") => `${base}/api/phone/answer?t=${encodeURIComponent(token)}&d=${d}`;
   const server = (process.env.NTFY_SERVER?.trim() || "https://ntfy.sh").replace(/\/+$/, "");
@@ -119,14 +180,14 @@ export async function ringPhone(input: {
       body: JSON.stringify({
         topic,
         priority: 5,
-        tags: ["rotating_light", "telephone_receiver"],
-        title: `Vera is calling: ${formatCents(input.amountCents)} at ${input.merchant}`,
-        message: `Risk ${input.riskScore}/100. Was this you? Answer to talk to Vera, or tap a button.`,
+        tags: input.tags,
+        title: input.title,
+        message: input.message,
         click: callUrl,
         actions: [
           { action: "view", label: "Answer Vera", url: callUrl, clear: true },
-          { action: "http", label: "It was me", url: answerUrl("yes"), method: "POST", clear: true },
-          { action: "http", label: "Block it", url: answerUrl("no"), method: "POST", clear: true },
+          { action: "http", label: input.yesLabel, url: answerUrl("yes"), method: "POST", clear: true },
+          { action: "http", label: input.noLabel, url: answerUrl("no"), method: "POST", clear: true },
         ],
       }),
       signal: AbortSignal.timeout(NTFY_TIMEOUT_MS),
