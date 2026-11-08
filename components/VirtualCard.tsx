@@ -8,7 +8,7 @@ import { formatCents } from "@/lib/format";
 
 type Provider = "stripe" | "lithic" | "simulated";
 
-type Revealed = { number: string; cvc: string; expMonth: number; expYear: number };
+type Revealed = { number: string; cvc: string; expMonth: number; expYear: number; issuer: "stripe" | "verafund" };
 
 // How long revealed details stay on screen before hiding themselves again.
 const AUTO_HIDE_MS = 90_000;
@@ -16,7 +16,7 @@ const AUTO_HIDE_MS = 90_000;
 function cardLabel(provider: Provider): string {
   if (provider === "stripe") return "STRIPE VIRTUAL CARD";
   if (provider === "lithic") return "LITHIC VIRTUAL CARD";
-  return "VERAFUND CARD";
+  return "VIRTUAL CARD";
 }
 
 // White text on dark faces, near-black on light ones (Hulu green, Amazon orange).
@@ -114,7 +114,7 @@ export function VirtualCard({
         const res = await revealCardAction(subscriptionId);
         if (!alive.current) return;
         if (res.ok) {
-          setDetails({ number: res.number, cvc: res.cvc, expMonth: res.expMonth, expYear: res.expYear });
+          setDetails({ number: res.number, cvc: res.cvc, expMonth: res.expMonth, expYear: res.expYear, issuer: res.issuer });
         } else {
           setDetails(null);
           setError(res.message);
@@ -255,7 +255,9 @@ export function VirtualCard({
                   {copied ? "Copied" : "Copy number"}
                 </button>
               </div>
-              <p className="text-[11px] leading-snug text-muted-foreground">Stripe test-mode card · works in the sandbox only</p>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                {details.issuer === "stripe" ? "Stripe test-mode card · works in the sandbox only" : "Sandbox test card · not a real card number"}
+              </p>
             </>
           ) : (
             <button
