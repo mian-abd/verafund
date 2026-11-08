@@ -53,7 +53,7 @@ function parseObject(json: string): Record<string, unknown> | null {
 
 export async function GET(request: Request) {
   const workspaceId = await getWorkspaceId();
-  if (!workspaceId) return reply({ status: "error", error: "Your session expired. Get started again." }, 401);
+  if (!workspaceId) return reply({ status: "error", error: "Your session expired. Log in again." }, 401);
 
   const params = new URL(request.url).searchParams;
   const checkId = params.get("check") ?? "";

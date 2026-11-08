@@ -48,17 +48,17 @@ function StrategyCard({
   badge: string | null;
 }) {
   return (
-    <div data-testid={testId} className="rounded-2xl border border-border bg-card p-5">
+    <div data-testid={testId} className="surface p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground">{icon}</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">{icon}</span>
           <div>
             <h4 className="text-base font-semibold text-foreground">{title}</h4>
             <p className="text-xs text-muted-foreground">{blurb}</p>
           </div>
         </div>
         {badge && (
-          <span className="shrink-0 rounded-full bg-green-600/10 px-2.5 py-0.5 text-xs font-semibold text-green-700 dark:text-green-400">
+          <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success">
             {badge}
           </span>
         )}
@@ -68,21 +68,21 @@ function StrategyCard({
         <dl className="mt-4 grid grid-cols-2 gap-4">
           <div>
             <dt className="text-xs text-muted-foreground">Debt-free in</dt>
-            <dd data-testid={`${testId}-months`} className="text-xl font-bold tabular-nums text-foreground">
+            <dd data-testid={`${testId}-months`} className="text-xl font-semibold tracking-tight tabular-nums text-foreground">
               {duration(result.months)}
             </dd>
             <dd className="text-xs text-muted-foreground">{debtFreeDate(nowMs, result.months)}</dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">Total interest</dt>
-            <dd data-testid={`${testId}-interest`} className="text-xl font-bold tabular-nums text-foreground">
+            <dd data-testid={`${testId}-interest`} className="text-xl font-semibold tracking-tight tabular-nums text-foreground">
               {formatCents(result.totalInterestCents)}
             </dd>
             <dd className="text-xs text-muted-foreground">Total paid {formatCents(result.totalPaidCents)}</dd>
           </div>
         </dl>
       ) : (
-        <p className="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-sm text-amber-800 dark:text-amber-300">
+        <p className="mt-4 rounded-xl border border-warning/35 bg-warning/10 px-3 py-2 text-sm text-warning">
           These payments never clear the debt within 50 years. Add more to the extra payment to cover the interest.
         </p>
       )}
@@ -125,20 +125,20 @@ export function PayoffPlanner({ debts, nowMs }: { debts: PayoffDebt[]; nowMs: nu
   return (
     <div data-testid="payoff-planner" className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">Payoff planner</h3>
-        <p className="text-sm text-muted-foreground">
+        <h3 className="text-lg font-semibold tracking-tight text-foreground">Payoff planner</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">
           Compare paying the highest APR first (avalanche) with the smallest balance first (snowball). Minimum payments
           roll into the next debt as each one is cleared.
         </p>
       </div>
 
       {open.length === 0 ? (
-        <p className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
+        <p className="surface p-5 text-sm text-muted-foreground">
           No open debts to plan for. Nice work.
         </p>
       ) : (
         <>
-          <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="surface p-5">
             <label htmlFor={inputId} className="block text-sm font-medium text-foreground">
               Extra monthly payment ($)
             </label>
@@ -152,7 +152,7 @@ export function PayoffPlanner({ debts, nowMs }: { debts: PayoffDebt[]; nowMs: nu
                 onChange={(e) => setExtraText(e.target.value)}
                 aria-invalid={extra === null}
                 aria-describedby={`${inputId}-hint`}
-                className="w-40 rounded-lg border border-input bg-background px-3 py-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
+                className="field w-40 tabular-nums"
               />
               <p id={`${inputId}-hint`} className={`text-xs ${extra === null ? "text-destructive" : "text-muted-foreground"}`}>
                 {extra === null
@@ -210,8 +210,18 @@ export function PayoffPlanner({ debts, nowMs }: { debts: PayoffDebt[]; nowMs: nu
                 </p>
               )}
 
-              <div className="rounded-2xl border border-border bg-card p-5">
-                <h4 className="text-sm font-semibold text-foreground">Total debt balance over time</h4>
+              <div className="surface p-5 sm:p-6">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-[15px] font-semibold tracking-tight text-foreground">Total debt balance over time</h4>
+                  <ul className="flex items-center gap-4 text-xs font-medium text-muted-foreground" aria-hidden="true">
+                    <li className="inline-flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-[4px] bg-primary" /> Avalanche
+                    </li>
+                    <li className="inline-flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-[4px] bg-info" /> Snowball
+                    </li>
+                  </ul>
+                </div>
                 <PayoffChart rows={plan.rows} />
               </div>
             </>

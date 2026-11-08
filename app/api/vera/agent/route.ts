@@ -51,7 +51,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const workspaceId = await getWorkspaceId();
-  if (!workspaceId) return Response.json({ error: "Your session expired. Get started again." }, { status: 401 });
+  if (!workspaceId) return Response.json({ error: "Your session expired. Log in again." }, { status: 401 });
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
   try {

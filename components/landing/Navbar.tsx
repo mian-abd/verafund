@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { Menu, X } from "lucide-react";
-import { startDemo } from "@/app/actions";
-import { SubmitButton } from "@/components/ui";
 
 const navLinks = [
   { label: "How It Works", href: "#how-it-works" },
@@ -12,27 +11,35 @@ const navLinks = [
   { label: "Technology", href: "#integration" },
 ];
 
-function PrimaryAction({ hasDemo, className = "" }: { hasDemo: boolean; className?: string }) {
-  if (hasDemo) {
+const PILL = "inline-flex items-center justify-center rounded-full px-6 py-2.5 text-sm font-medium transition-opacity hover:opacity-90";
+
+// Visitors with a workspace go straight back in; everyone else sees Log in / Sign up.
+function NavActions({ hasWorkspace, className = "" }: { hasWorkspace: boolean; className?: string }) {
+  if (hasWorkspace) {
     return (
-      <a
-        href="/app"
-        className={`inline-flex items-center justify-center rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity ${className}`}
-      >
-        Continue
-      </a>
+      <div className={className}>
+        <Link href="/app" className={`${PILL} bg-primary text-primary-foreground`}>
+          Open dashboard
+        </Link>
+      </div>
     );
   }
   return (
-    <form action={startDemo} className={className}>
-      <SubmitButton pendingText="Setting up…" className="w-full px-6 py-2.5">
-        Get started
-      </SubmitButton>
-    </form>
+    <div className={className}>
+      <Link
+        href="/login"
+        className="inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+      >
+        Log in
+      </Link>
+      <Link href="/signup" className={`${PILL} bg-primary text-primary-foreground`}>
+        Sign up
+      </Link>
+    </div>
   );
 }
 
-const Navbar = ({ hasDemo }: { hasDemo: boolean }) => {
+const Navbar = ({ hasWorkspace }: { hasWorkspace: boolean }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -54,9 +61,7 @@ const Navbar = ({ hasDemo }: { hasDemo: boolean }) => {
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
-          <PrimaryAction hasDemo={hasDemo} />
-        </div>
+        <NavActions hasWorkspace={hasWorkspace} className="hidden md:flex items-center gap-2" />
 
         <button
           type="button"
@@ -86,7 +91,7 @@ const Navbar = ({ hasDemo }: { hasDemo: boolean }) => {
                 {link.label}
               </a>
             ))}
-            <PrimaryAction hasDemo={hasDemo} />
+            <NavActions hasWorkspace={hasWorkspace} className="flex flex-col gap-2 [&>a]:w-full" />
           </div>
         </motion.div>
       )}

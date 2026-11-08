@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { ReceiptText, Search } from "lucide-react";
 import { ErrorBanner } from "@/components/guard";
+import { PageHeader } from "@/components/Page";
 import { FraudAlert } from "@/components/transactions/FraudAlert";
 import { STATUSES } from "@/components/transactions/options";
 import { SimulateForm } from "@/components/transactions/SimulateForm";
@@ -15,8 +16,7 @@ import { getWorkspaceId } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 100;
-const FIELD =
-  "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+const FIELD = "field";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -71,20 +71,18 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
   const flaggedCount = all.filter((t) => t.status === "flagged").length;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6" data-testid="transactions-page">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Transactions</h1>
-        <p className="text-sm text-muted-foreground">
-          Every charge, newest first. Vera scores each new purchase for fraud and asks you about the risky ones.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6" data-testid="transactions-page">
+      <PageHeader
+        title="Transactions"
+        description="Every charge, newest first. Vera scores each new purchase for fraud and asks you about the risky ones."
+      />
 
       <ErrorBanner message={error || undefined} />
       {alert && <FraudAlert alert={alert} phoneReady={phoneReady} />}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
         <div className="order-2 space-y-4 lg:order-1">
-          <form method="get" action="/app/transactions" className="rounded-2xl border border-border bg-card p-4 space-y-3" data-testid="tx-filters">
+          <form method="get" action="/app/transactions" className="surface space-y-3 p-4" data-testid="tx-filters">
             <div className="space-y-1">
               <label htmlFor="f-q" className="text-xs font-medium text-muted-foreground">
                 Search
@@ -138,7 +136,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="submit"
-                className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+                className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[0_1px_2px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all hover:brightness-110 active:scale-[0.98]"
               >
                 Apply filters
               </button>
@@ -150,18 +148,21 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
             </div>
           </form>
 
-          <p className="text-sm text-muted-foreground" data-testid="tx-count" aria-live="polite">
+          <p className="px-1 text-[13px] text-muted-foreground" data-testid="tx-count" aria-live="polite">
             Showing {visible.length} of {all.length} transaction{all.length === 1 ? "" : "s"}
             {filtering && ` (${filtered.length} match${filtered.length === 1 ? "es" : ""})`}
             {flaggedCount > 0 && ` · ${flaggedCount} flagged`}
           </p>
 
           {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground" data-testid="tx-empty">
-              {all.length === 0 ? "No transactions yet." : "No transactions match these filters."}
+            <div className="surface flex flex-col items-center gap-2.5 px-6 py-12 text-center text-sm text-muted-foreground" data-testid="tx-empty">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                <ReceiptText size={18} aria-hidden="true" />
+              </span>
+              <p>{all.length === 0 ? "No transactions yet." : "No transactions match these filters."}</p>
             </div>
           ) : (
-            <ul className="divide-y divide-border rounded-2xl border border-border bg-card" data-testid="transaction-list">
+            <ul className="surface divide-y divide-border overflow-hidden" data-testid="transaction-list">
               {visible.map((t) => (
                 <TransactionRow key={t.id} tx={t} accountName={accountName.get(t.accountId) ?? "Guard card"} />
               ))}
@@ -178,7 +179,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams:
                   ...(status && { status }),
                   all: "1",
                 }).toString()}`}
-                className="inline-flex rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                className="inline-flex rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-[0_1px_2px_rgba(38,28,18,0.06)] transition-colors hover:bg-muted"
               >
                 Show all {filtered.length}
               </Link>

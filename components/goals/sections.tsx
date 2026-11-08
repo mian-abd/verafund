@@ -1,5 +1,6 @@
 import { AlertTriangle, CalendarClock, CircleCheck, Plus } from "lucide-react";
 import { addGoalAction, addToGoalAction, recordPaymentAction } from "@/app/app/goals/actions";
+import { SectionHeading } from "@/components/Page";
 import { ReturnTo, SubmitButton } from "@/components/ui";
 import type { Budget, Debt, Goal } from "@/lib/db/schema";
 import { formatCents, formatDate } from "@/lib/format";
@@ -11,8 +12,7 @@ import { ProgressBar, type ProgressTone } from "./Progress";
 
 const DAY = 86_400_000;
 
-const inputClass =
-  "mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+const inputClass = "field mt-1";
 
 function MoneyForm({
   action,
@@ -45,7 +45,7 @@ function MoneyForm({
           inputMode="decimal"
           required
           placeholder="e.g. 50"
-          className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
+          className="field mt-1 tabular-nums"
         />
       </div>
       <SubmitButton pendingText={pendingText}>{button}</SubmitButton>
@@ -62,9 +62,9 @@ function GoalCard({ goal, now }: { goal: Goal; now: number }) {
   const remaining = Math.max(0, goal.targetCents - goal.savedCents);
 
   return (
-    <article data-testid="goal-card" aria-label={goal.name} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+    <article data-testid="goal-card" aria-label={goal.name} className="surface flex flex-col gap-4 p-5">
       <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <GoalIcon name={goal.icon} />
         </span>
         <div className="min-w-0 flex-1">
@@ -77,7 +77,7 @@ function GoalCard({ goal, now }: { goal: Goal; now: number }) {
         {complete && (
           <span
             data-testid="goal-reached"
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-600/10 px-2.5 py-1 text-xs font-bold text-green-700 dark:text-green-400"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-bold text-success"
           >
             <CircleCheck size={14} aria-hidden="true" /> Goal reached!
           </span>
@@ -87,7 +87,7 @@ function GoalCard({ goal, now }: { goal: Goal; now: number }) {
       <div>
         <div className="mb-2 flex items-baseline justify-between gap-2">
           <p className="text-sm text-foreground">
-            <span className="text-xl font-bold tabular-nums">{formatCents(goal.savedCents)}</span>{" "}
+            <span className="text-2xl font-semibold tracking-tight tabular-nums">{formatCents(goal.savedCents)}</span>{" "}
             <span className="text-muted-foreground">of {formatCents(goal.targetCents)}</span>
           </p>
           <span className="text-sm font-semibold tabular-nums text-muted-foreground">{pct}%</span>
@@ -131,7 +131,7 @@ function AddGoalForm({ now }: { now: number }) {
     <form
       action={addGoalAction}
       data-testid="add-goal-form"
-      className="rounded-2xl border border-dashed border-border bg-card p-5"
+      className="surface border-dashed p-5 sm:p-6"
     >
       <ReturnTo />
       <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
@@ -172,7 +172,7 @@ function AddGoalForm({ now }: { now: number }) {
           {GOAL_ICON_NAMES.map((name, i) => (
             <label key={name} className="cursor-pointer">
               <input type="radio" name="icon" value={name} defaultChecked={i === 0} className="peer sr-only" />
-              <span className="flex flex-col items-center gap-1 rounded-xl border border-border px-2 py-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
+              <span className="flex flex-col items-center gap-1 rounded-xl border border-border bg-background px-2 py-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted peer-checked:border-primary peer-checked:bg-primary/10 peer-checked:text-primary peer-checked:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-primary)_16%,transparent)] peer-focus-visible:ring-2 peer-focus-visible:ring-ring">
                 <GoalIcon name={name} size={20} />
                 {GOAL_ICON_LABELS[name]}
               </span>
@@ -192,14 +192,9 @@ export function GoalsSection({ goals, now }: { goals: Goal[]; now: number }) {
   const ordered = [...goals].sort((a, b) => a.createdAt - b.createdAt || a.name.localeCompare(b.name));
   return (
     <section data-testid="goals-section" aria-labelledby="goals-heading" className="space-y-4">
-      <div>
-        <h2 id="goals-heading" className="text-xl font-bold tracking-tight text-foreground">
-          Savings goals
-        </h2>
-        <p className="text-sm text-muted-foreground">Track what you are saving for and what it takes to get there on time.</p>
-      </div>
+      <SectionHeading id="goals-heading" title="Savings goals" description="Track what you are saving for and what it takes to get there on time." />
       {ordered.length === 0 ? (
-        <p className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
+        <p className="surface p-5 text-sm text-muted-foreground">
           No goals yet. Add your first one below.
         </p>
       ) : (
@@ -228,14 +223,14 @@ function DebtCard({ debt }: { debt: Debt }) {
   const paid = percentPaidOff(debt.balanceCents, debt.originalCents);
   const done = debt.balanceCents === 0;
   return (
-    <article data-testid="debt-card" aria-label={debt.name} className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+    <article data-testid="debt-card" aria-label={debt.name} className="surface flex flex-col gap-4 p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-base font-semibold text-foreground">{debt.name}</h3>
           <p className="text-xs text-muted-foreground">{KIND_LABEL[debt.kind]}</p>
         </div>
         {done ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-600/10 px-2.5 py-1 text-xs font-bold text-green-700 dark:text-green-400">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-bold text-success">
             <CircleCheck size={14} aria-hidden="true" /> Paid off!
           </span>
         ) : (
@@ -248,7 +243,7 @@ function DebtCard({ debt }: { debt: Debt }) {
       <dl className="grid grid-cols-3 gap-3">
         <div>
           <dt className="text-xs text-muted-foreground">Balance</dt>
-          <dd data-testid="debt-balance" className="text-lg font-bold tabular-nums text-foreground">
+          <dd data-testid="debt-balance" className="text-lg font-semibold tracking-tight tabular-nums text-foreground">
             {formatCents(debt.balanceCents)}
           </dd>
         </div>
@@ -289,7 +284,7 @@ function DebtCard({ debt }: { debt: Debt }) {
 export function DebtsList({ debts }: { debts: Debt[] }) {
   const ordered = [...debts].sort((a, b) => b.aprBps - a.aprBps || b.balanceCents - a.balanceCents);
   if (ordered.length === 0) {
-    return <p className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">No debts on record.</p>;
+    return <p className="surface p-5 text-sm text-muted-foreground">No debts on record.</p>;
   }
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -318,7 +313,7 @@ function BudgetRow({ budget, spentCents }: { budget: Budget; spentCents: number 
     <li
       data-testid="budget-row"
       data-over={over ? "true" : "false"}
-      className={`rounded-2xl border bg-card p-5 ${over ? "border-destructive/50 bg-destructive/5" : "border-border"}`}
+      className={`surface p-5 ${over ? "!border-destructive/50 !bg-destructive/5" : ""}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -353,7 +348,7 @@ function BudgetRow({ budget, spentCents }: { budget: Budget; spentCents: number 
 export function BudgetsList({ budgets, spend }: { budgets: Budget[]; spend: Record<string, number> }) {
   const ordered = [...budgets].sort((a, b) => b.limitCents - a.limitCents || a.category.localeCompare(b.category));
   if (ordered.length === 0) {
-    return <p className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">No budgets set yet.</p>;
+    return <p className="surface p-5 text-sm text-muted-foreground">No budgets set yet.</p>;
   }
   return (
     <ul className="grid gap-4 md:grid-cols-2">

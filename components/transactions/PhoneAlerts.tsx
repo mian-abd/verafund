@@ -5,7 +5,7 @@ import { ReturnTo, SubmitButton } from "@/components/ui";
 // Opt-in for Vera ringing the owner's phone (ntfy push with a call screen) on fraud.
 export function PhoneAlerts({ on }: { on: boolean }) {
   return (
-    <section data-testid="phone-alerts" className="rounded-2xl border border-border bg-card p-5 space-y-3">
+    <section data-testid="phone-alerts" className="surface space-y-3 p-5">
       <div className="flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Smartphone size={18} aria-hidden="true" />
@@ -21,7 +21,7 @@ export function PhoneAlerts({ on }: { on: boolean }) {
       <form action={setPhoneAlertsAction} className="flex items-center justify-between gap-3">
         <ReturnTo />
         <input type="hidden" name="on" value={on ? "0" : "1"} />
-        <span className={`text-sm font-medium ${on ? "text-green-700 dark:text-green-400" : "text-muted-foreground"}`}>
+        <span className={`text-sm font-medium ${on ? "text-success" : "text-muted-foreground"}`}>
           {on ? "On" : "Off"}
         </span>
         <SubmitButton variant={on ? "outline" : "primary"} pendingText="Saving…" data-testid="phone-alerts-toggle">

@@ -7,12 +7,12 @@ import { discoverCandidates } from "@/lib/discovery";
 import { getWorkspaceId } from "@/lib/session";
 import { DiscoveryList, type DiscoveryRow } from "./DiscoveryList";
 
-const SHELL = "rounded-2xl border border-border bg-card";
+const SHELL = "surface";
 
 function Icon() {
   return (
-    <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-      <ScanSearch size={18} aria-hidden="true" />
+    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_6px_14px_-6px_var(--color-primary)]">
+      <ScanSearch size={19} aria-hidden="true" />
     </span>
   );
 }
@@ -50,7 +50,7 @@ async function Results({ notice }: { notice?: string }) {
         <div
           role="status"
           data-testid="discovery-notice"
-          className="rounded-xl border border-green-600/30 bg-green-600/10 px-4 py-3 text-sm text-green-700 dark:text-green-400"
+          className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success"
         >
           {notice}
         </div>
@@ -82,7 +82,10 @@ function Scanning() {
   return (
     <div role="status" aria-live="polite" className="space-y-3">
       <p className="text-sm text-muted-foreground">Scanning your transactions for recurring charges…</p>
-      <div className="h-24 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
+      <div className="space-y-2" aria-hidden="true">
+        <div className="h-16 animate-pulse rounded-xl bg-muted" />
+        <div className="h-16 animate-pulse rounded-xl bg-muted/70" />
+      </div>
     </div>
   );
 }
@@ -101,10 +104,10 @@ export async function DiscoveryPanel({
 
   if (!open) {
     return (
-      <section data-testid="discovery-panel" data-state="collapsed" aria-label="Find my subscriptions" className={SHELL}>
-        <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+      <section data-testid="discovery-panel" data-state="collapsed" aria-label="Find my subscriptions" className={`${SHELL} bg-gradient-to-r from-primary/[0.07] via-transparent to-transparent`}>
+        <div className="flex flex-wrap items-center gap-4 px-5 py-4">
           <Icon />
-          <p id="discovery-intro" className="min-w-0 flex-1 basis-56 text-sm text-muted-foreground">
+          <p id="discovery-intro" className="min-w-0 flex-1 basis-56 text-sm leading-relaxed text-muted-foreground">
             Scan your transactions for recurring charges, then guard each one with its own capped card.
           </p>
           <form action={runDiscoveryAction}>

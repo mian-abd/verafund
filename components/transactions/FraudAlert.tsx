@@ -102,7 +102,7 @@ export function FraudAlert({ alert, phoneReady = false }: { alert: FraudAlertDat
   };
 
   return (
-    <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-3" data-testid="vera-fraud-alert">
+    <div className="space-y-3 rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/[0.04] to-transparent p-5 [box-shadow:var(--shadow-card)]" data-testid="vera-fraud-alert">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">V</span>
@@ -115,7 +115,7 @@ export function FraudAlert({ alert, phoneReady = false }: { alert: FraudAlertDat
           type="button"
           onClick={toggleVoice}
           aria-pressed={voiceOn}
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-[0_1px_2px_rgba(38,28,18,0.06)] transition-colors hover:bg-muted"
         >
           {voiceOn ? <Volume2 size={14} aria-hidden="true" /> : <VolumeX size={14} aria-hidden="true" />}
           {voiceOn ? "Vera voice on" : "Turn on Vera voice"}

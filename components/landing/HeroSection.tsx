@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 import { startDemo } from "@/app/actions";
 import { SubmitButton } from "@/components/ui";
 
-const HeroSection = ({ hasDemo, error, expired }: { hasDemo: boolean; error?: string; expired?: boolean }) => {
-  const message = error ?? (expired ? "Your session expired. Get started again." : null);
+const HeroSection = ({ error, expired }: { error?: string; expired?: boolean }) => {
+  const message = error ?? (expired ? "Your session expired. Log in or try a demo account." : null);
 
   return (
     <section className="relative min-h-screen overflow-hidden pt-24 pb-0">
@@ -40,31 +41,33 @@ const HeroSection = ({ hasDemo, error, expired }: { hasDemo: boolean; error?: st
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-center gap-4 mb-12 animate-rise" style={{ animationDelay: "0.3s" }}
+        <div className="flex flex-col items-center gap-5 mb-12 animate-rise" style={{ animationDelay: "0.3s" }}
         >
-          <form action={startDemo}>
-            <SubmitButton pendingText="Setting up your cards…" className="group pl-6 pr-2 py-2">
-              {hasDemo ? "Start over" : "Get started"}
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/signup"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-primary pl-6 pr-2 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              Sign up free
               <span className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center group-hover:bg-primary-foreground/30 transition-colors">
                 <ArrowUpRight size={16} aria-hidden="true" />
               </span>
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center rounded-full bg-dark px-6 py-3 text-sm font-medium text-background hover:opacity-90 transition-opacity"
+            >
+              Log in
+            </Link>
+          </div>
+
+          {/* No sign-up needed: a real <button> in a <form> that opens a fresh sample workspace. */}
+          <form action={startDemo} className="flex flex-col items-center gap-2">
+            <SubmitButton variant="outline" pendingText="Setting up your demo…" className="px-5 py-2.5" data-testid="try-demo">
+              Try a demo account
             </SubmitButton>
+            <p className="text-xs text-muted-foreground">No sign-up needed. Sample data and sandbox cards.</p>
           </form>
-          {hasDemo ? (
-            <a
-              href="/app"
-              className="inline-flex items-center justify-center rounded-full bg-dark px-6 py-3 text-sm font-medium text-background hover:opacity-90 transition-opacity"
-            >
-              Continue
-            </a>
-          ) : (
-            <a
-              href="#features"
-              className="inline-flex items-center justify-center rounded-full bg-dark px-6 py-3 text-sm font-medium text-background hover:opacity-90 transition-opacity"
-            >
-              View Features
-            </a>
-          )}
         </div>
 
         <div className="flex items-center justify-between w-full max-w-4xl mb-4 gap-4 animate-rise" style={{ animationDelay: "0.4s" }}

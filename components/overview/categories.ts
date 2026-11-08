@@ -1,16 +1,17 @@
 // Shared category colors and labels for the overview charts and lists.
+// A restrained, slightly desaturated set that sits next to the brand orange without fighting it.
 
 const CATEGORY_COLORS: Record<string, string> = {
-  housing: "#6366F1",
-  food: "#F97316",
-  transport: "#0EA5E9",
-  entertainment: "#A855F7",
-  shopping: "#EC4899",
-  utilities: "#14B8A6",
-  subscriptions: "#EAB308",
+  housing: "#5B6CDB",
+  food: "#E8883A",
+  transport: "#2B9DB8",
+  entertainment: "#9A6AD6",
+  shopping: "#D1568C",
+  utilities: "#2FA68A",
+  subscriptions: "#C79A1E",
 };
 
-const FALLBACK = ["#84CC16", "#06B6D4", "#F43F5E", "#8B5CF6", "#10B981", "#F59E0B"];
+const FALLBACK = ["#7CA82B", "#3A9FC4", "#D9545F", "#8A6CCB", "#2E9E78", "#CC8A2E"];
 
 export function categoryColor(category: string): string {
   const known = CATEGORY_COLORS[category.toLowerCase()];

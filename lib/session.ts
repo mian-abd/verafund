@@ -17,3 +17,8 @@ export async function setWorkspaceId(id: string): Promise<void> {
     maxAge: 60 * 60 * 24 * 7,
   });
 }
+
+// Log out: forget the workspace in this browser. The data stays in the database.
+export async function clearWorkspaceId(): Promise<void> {
+  (await cookies()).delete(WORKSPACE_COOKIE);
+}

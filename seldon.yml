@@ -10,12 +10,12 @@ testCases:
     name: A price hike above the card limit is declined, then approved by the user
     steps:
       - go to /
-      - click the "Get started" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
       - in the Netflix section, confirm it says "limit $15.99"
-      - in the Netflix section, replace the charge amount with 18.99 and click "Simulate charge"
+      - in the Netflix section, replace the charge amount with 18.99 and click "Charge card"
       - in the Netflix section, read the last charge result
       - click the "Approve $18.99 going forward" button
-      - in the Netflix section, make sure the charge amount is 18.99 and click "Simulate charge" again
+      - in the Netflix section, make sure the charge amount is 18.99 and click "Charge card" again
       - reload the page
     criteria: >-
       the first $18.99 Netflix charge was shown as "Declined" with "$18.99 is above your $15.99 limit",
@@ -27,12 +27,12 @@ testCases:
     name: A free trial's card locks when the trial ends, so the first paid charge is declined
     steps:
       - go to /
-      - click the "Get started" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
       - click "Add subscription"
       - enter "Calm" as the merchant and 12.99 as the price, leave the billing cycle on Monthly, check "Free trial", keep the trial length at 7 days, and click "Save subscription"
       - confirm the Calm section's status starts with "Trial"
       - click "Jump ahead 8 days" at the top of the page
-      - in the Calm section, make sure the charge amount is 12.99 and click "Simulate charge"
+      - in the Calm section, make sure the charge amount is 12.99 and click "Charge card"
       - reload the page
     criteria: >-
       the Calm section shows the status "Trial ended: card locked" and its last charge is "Declined"
@@ -44,8 +44,8 @@ testCases:
     name: The user can keep blocking a price hike
     steps:
       - go to /
-      - click the "Get started" button in the middle of the page
-      - in the Spotify section, replace the charge amount with 14.99 and click "Simulate charge"
+      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - in the Spotify section, replace the charge amount with 14.99 and click "Charge card"
       - click "Keep blocking"
       - reload the page
     criteria: >-
@@ -58,10 +58,10 @@ testCases:
     name: A paused card declines charges and a closed card stays closed
     steps:
       - go to /
-      - click the "Get started" button in the middle of the page
-      - in the Planet Fitness section click "Pause card", then click "Simulate charge"
+      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - in the Planet Fitness section click "Pause card", then click "Charge card"
       - click "Details" in the Planet Fitness section
-      - 'click "I cancelled with Planet Fitness: close card", then click "Simulate charge"'
+      - 'click "I cancelled with Planet Fitness: close card", then click "Charge card"'
     criteria: >-
       the Planet Fitness detail page shows the status "Cancelled: card closed" and its last charge
       is "Declined" with "Card closed after you cancelled Planet Fitness"
@@ -71,7 +71,7 @@ testCases:
     name: Subscriptions found in the transaction history can be guarded in one click
     steps:
       - go to /
-      - click the "Get started" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
       - click the "Find my subscriptions" button
       - in the list under "Subscriptions", read the Hulu and iCloud Plus rows
       - click the "Guard selected (2)" button
@@ -80,3 +80,18 @@ testCases:
       the Hulu row was marked "Price went up" with "the price went from $9.99 to $11.99",
       after guarding the page says "Guarded 2 subscriptions", and the page now has a Hulu
       section showing "limit $11.99" and an iCloud Plus section showing "limit $2.99"
+
+  - id: w6-vera-action
+    area: vera/agent
+    name: Vera takes an action only after the user confirms it
+    steps:
+      - go to /
+      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Ask Vera" button at the bottom right of the page
+      - type "pause Spotify" in Vera's message box and press Enter
+      - read Vera's reply, then click "Yes, do it"
+      - close the Vera panel and reload the page
+    criteria: >-
+      before confirming, Vera read the action back (it mentions the Spotify card and asks
+      "Should I go ahead?") and nothing had changed yet; after "Yes, do it" she said it was
+      done; after the reload the Spotify section shows its card as paused

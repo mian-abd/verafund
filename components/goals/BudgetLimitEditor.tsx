@@ -43,7 +43,7 @@ export function BudgetLimitEditor({ budgetId, category, limitCents }: { budgetId
           required
           autoFocus
           defaultValue={toInputValue(limitCents)}
-          className="mt-1 w-32 rounded-lg border border-input bg-background px-3 py-1.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring"
+          className="field mt-1 w-32 !py-1.5 tabular-nums"
         />
       </div>
       <SubmitButton pendingText="Saving…" className="!px-3 !py-1.5 text-xs">

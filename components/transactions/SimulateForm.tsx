@@ -6,8 +6,7 @@ import { simulatePurchaseAction } from "@/app/app/transactions/actions";
 import { SubmitButton } from "@/components/ui";
 import { COUNTRIES, FRAUD_EXAMPLE, PURCHASE_CATEGORIES } from "./options";
 
-const FIELD =
-  "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+const FIELD = "field";
 
 export function SimulateForm() {
   const [merchant, setMerchant] = useState("");
@@ -16,12 +15,15 @@ export function SimulateForm() {
   const [country, setCountry] = useState("US");
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 space-y-4" data-testid="simulate-purchase">
+    <section className="surface space-y-4 p-5" data-testid="simulate-purchase">
       <div>
-        <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-          <FlaskConical size={18} aria-hidden="true" /> Simulate a purchase
+        <h2 className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight text-foreground">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <FlaskConical size={16} aria-hidden="true" />
+          </span>
+          Test a purchase
         </h2>
-        <p className="text-sm text-muted-foreground">Vera scores it against your history. Nothing here moves real money.</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Vera scores it against your history. Nothing here moves real money.</p>
       </div>
 
       <form action={simulatePurchaseAction} className="space-y-3">
@@ -95,7 +97,7 @@ export function SimulateForm() {
               setCategory(FRAUD_EXAMPLE.category);
               setCountry(FRAUD_EXAMPLE.country);
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+            className="inline-flex items-center gap-2 rounded-full border border-destructive/40 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
           >
             <ShieldAlert size={15} aria-hidden="true" /> Fill a fraud example
           </button>

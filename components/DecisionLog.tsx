@@ -14,9 +14,9 @@ const PURPOSE_LABEL: Record<string, string> = {
 };
 
 const ENGINE_STYLE: Record<Decision["engine"], { label: string; className: string }> = {
-  jev: { label: "Jev", className: "border-sky-500/40 bg-sky-500/10 text-sky-800 dark:text-sky-300" },
+  jev: { label: "Jev", className: "border-info/30 bg-info/10 text-info" },
   rules: { label: "Rules", className: "border-border bg-muted text-muted-foreground" },
-  llm: { label: "LLM", className: "border-violet-500/40 bg-violet-500/10 text-violet-800 dark:text-violet-300" },
+  llm: { label: "LLM", className: "border-primary/30 bg-primary/10 text-primary" },
 };
 
 function pct(n: unknown): string | null {
@@ -68,23 +68,23 @@ export async function DecisionLog({ workspaceId }: { workspaceId: string }) {
   const jevRows = rows.filter((r) => r.engine === "jev");
 
   return (
-    <section data-testid="decision-log" className="rounded-2xl border border-border bg-card p-5 space-y-4">
+    <section data-testid="decision-log" className="surface space-y-4 p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">How decisions were made</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-[15px] font-semibold tracking-tight text-foreground">How decisions were made</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             Jev answers typed questions in milliseconds. Rules have the final say and take over when Jev is unavailable.
           </p>
         </div>
         {jevRows.length > 0 && (
-          <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-800 dark:text-sky-300">
+          <span className="rounded-full border border-info/30 bg-info/10 px-3 py-1 text-xs font-semibold text-info">
             Jev: {jevRows.length} decision{jevRows.length === 1 ? "" : "s"} · median {median(jevRows.map((r) => r.latencyMs))} ms
           </span>
         )}
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="well px-4 py-6 text-center text-sm text-muted-foreground">
           Nothing yet. Ask Vera to do something, run &ldquo;Find my subscriptions&rdquo;, or add a purchase on Transactions.
         </p>
       ) : (
@@ -92,7 +92,7 @@ export async function DecisionLog({ workspaceId }: { workspaceId: string }) {
           {rows.map((r) => {
             const engine = ENGINE_STYLE[r.engine];
             return (
-              <li key={r.id} data-testid="decision-row" className="py-3 flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4">
+              <li key={r.id} data-testid="decision-row" className="flex flex-col gap-1 py-3.5 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:gap-4">
                 <div className="flex items-center gap-2 sm:w-24 shrink-0">
                   <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${engine.className}`}>{engine.label}</span>
                   <span className="text-xs tabular-nums text-muted-foreground">{r.latencyMs} ms</span>

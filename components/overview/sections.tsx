@@ -1,6 +1,6 @@
 // Server-rendered sections of the Overview page. Charts live in client components.
 
-import { AlertTriangle, CheckCircle2, CreditCard } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CreditCard, Percent, PiggyBank, Receipt, Wallet } from "lucide-react";
 import { MerchantLogo } from "@/components/MerchantLogo";
 import { formatCents, formatDate, formatShortDate } from "@/lib/format";
 import {
@@ -34,18 +34,22 @@ export function StatsRow({
   const s = summary;
   return (
     <div data-testid="overview-stats" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <Stat label="Net worth" value={formatCents(netWorthCents)} testId="stat-net-worth">
+      <Stat label="Net worth" value={formatCents(netWorthCents)} testId="stat-net-worth" icon={<Wallet className="h-4 w-4" aria-hidden="true" />}>
         Across {accountCount} account{accountCount === 1 ? "" : "s"}
       </Stat>
-      <Stat label="Income this month" value={formatCents(s.incomeCents)} testId="stat-income">
-        Last month: {formatCents(s.prevIncomeCents)}
+      <Stat label="Income this month" value={formatCents(s.incomeCents)} testId="stat-income" icon={<PiggyBank className="h-4 w-4" aria-hidden="true" />}>
+        <span className="text-muted-foreground">Last month: {formatCents(s.prevIncomeCents)}</span>
       </Stat>
-      <Stat label="Spending this month" value={formatCents(s.spendingCents)} testId="stat-spending">
+      <Stat label="Spending this month" value={formatCents(s.spendingCents)} testId="stat-spending" icon={<Receipt className="h-4 w-4" aria-hidden="true" />}>
         {s.spendingDeltaPct === null ? (
           <>Month to date</>
         ) : (
-          <Trend delta={s.spendingDeltaPct} good={s.spendingDeltaPct <= 0}>
-            {Math.abs(s.spendingDeltaPct).toFixed(0)}% {s.spendingDeltaPct <= 0 ? "less" : "more"} than the same days last month
+          <Trend
+            delta={s.spendingDeltaPct}
+            good={s.spendingDeltaPct <= 0}
+            figure={`${Math.abs(s.spendingDeltaPct).toFixed(0)}%`}
+          >
+            {s.spendingDeltaPct <= 0 ? "less" : "more"} than the same days last month
           </Trend>
         )}
       </Stat>
@@ -53,14 +57,19 @@ export function StatsRow({
         label="Savings rate"
         value={s.savingsRatePct === null ? "—" : pct1(s.savingsRatePct)}
         testId="stat-savings-rate"
+        icon={<Percent className="h-4 w-4" aria-hidden="true" />}
       >
         {s.savingsRatePct === null ? (
           <>No income yet this month</>
         ) : s.savingsRateDeltaPts === null ? (
           <>Month to date</>
         ) : (
-          <Trend delta={s.savingsRateDeltaPts} good={s.savingsRateDeltaPts >= 0}>
-            {Math.abs(s.savingsRateDeltaPts).toFixed(1)} pts {s.savingsRateDeltaPts >= 0 ? "above" : "below"} last month
+          <Trend
+            delta={s.savingsRateDeltaPts}
+            good={s.savingsRateDeltaPts >= 0}
+            figure={`${Math.abs(s.savingsRateDeltaPts).toFixed(1)} pts`}
+          >
+            {s.savingsRateDeltaPts >= 0 ? "above" : "below"} last month
             {s.prevSavingsRatePct !== null && ` (${pct1(s.prevSavingsRatePct)})`}
           </Trend>
         )}
@@ -86,7 +95,7 @@ export function BudgetsCard({ rows, monthLabel }: { rows: BudgetRow[]; monthLabe
           {overCount > 0 && (
             <p
               role="status"
-              className="mb-4 flex items-center gap-2 rounded-xl border border-red-600/30 bg-red-600/10 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-400"
+              className="mb-4 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive"
             >
               <AlertTriangle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
               {overCount} categor{overCount === 1 ? "y is" : "ies are"} over budget this month.
@@ -105,7 +114,7 @@ export function BudgetsCard({ rows, monthLabel }: { rows: BudgetRow[]; monthLabe
                     <span className="truncate font-medium text-foreground">{categoryLabel(r.category)}</span>
                   </span>
                   <span className="flex-shrink-0 tabular-nums text-muted-foreground">
-                    <span className={r.over ? "font-semibold text-red-700 dark:text-red-400" : "text-foreground"}>
+                    <span className={r.over ? "font-semibold text-destructive" : "text-foreground"}>
                       {formatCents(r.spentCents)}
                     </span>{" "}
                     / {formatCents(r.limitCents)}
@@ -116,7 +125,7 @@ export function BudgetsCard({ rows, monthLabel }: { rows: BudgetRow[]; monthLabe
                   tone={r.over ? "danger" : r.pct >= 85 ? "primary" : "success"}
                   label={`${categoryLabel(r.category)} budget used`}
                 />
-                <p className={`mt-1 text-xs ${r.over ? "font-medium text-red-700 dark:text-red-400" : "text-muted-foreground"}`}>
+                <p className={`mt-1 text-xs ${r.over ? "font-medium text-destructive" : "text-muted-foreground"}`}>
                   {r.over
                     ? `Over budget by ${formatCents(-r.remainingCents)}`
                     : `${formatCents(r.remainingCents)} left · ${Math.round(r.pct)}% used`}
@@ -158,7 +167,7 @@ export function RecentTransactions({ items }: { items: RecentTx[] }) {
             const blocked = t.status === "blocked";
             return (
               <li key={t.id} data-testid="recent-tx-row" className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                <MerchantLogo name={t.merchant} size={36} />
+                <MerchantLogo name={t.merchant} size={38} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">{t.merchant}</p>
                   <p className="truncate text-xs text-muted-foreground">
@@ -171,7 +180,7 @@ export function RecentTransactions({ items }: { items: RecentTx[] }) {
                       blocked
                         ? "text-muted-foreground line-through"
                         : income
-                          ? "text-green-700 dark:text-green-400"
+                          ? "text-success"
                           : "text-foreground"
                     }`}
                   >
@@ -219,7 +228,7 @@ export function GoalsSummary({ goals, now }: { goals: GoalItem[]; now: number })
             return (
               <li key={g.id} data-testid="goal-row">
                 <div className="mb-1.5 flex items-center gap-3">
-                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-light-accent text-primary">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <GoalIcon name={g.icon} />
                   </span>
                   <div className="min-w-0 flex-1">
@@ -298,7 +307,7 @@ export function UpcomingBills({
               </li>
             ))}
           </ul>
-          <div className="mt-4 flex items-center justify-between rounded-xl bg-muted px-3 py-2 text-sm">
+          <div className="well mt-4 flex items-center justify-between px-3.5 py-2.5 text-sm">
             <span className="text-muted-foreground">Expected in the next 30 days</span>
             <span className="font-semibold tabular-nums text-foreground" data-testid="bills-total">
               {formatCents(total)}
@@ -335,11 +344,11 @@ function ordinal(n: number): string {
 
 function MiniStat({ label, value, tone }: { label: string; value: string; tone?: "bad" }) {
   return (
-    <div className="min-w-0 rounded-xl bg-muted px-3 py-2">
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+    <div className="well min-w-0 px-3.5 py-3">
+      <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
       <p
-        className={`truncate text-base font-semibold tabular-nums ${
-          tone === "bad" ? "text-red-700 dark:text-red-400" : "text-foreground"
+        className={`mt-0.5 truncate text-base font-semibold tabular-nums tracking-tight ${
+          tone === "bad" ? "text-destructive" : "text-foreground"
         }`}
       >
         {value}
@@ -372,7 +381,7 @@ export function ForecastCard({
       badge="Estimate"
       testId="insight-forecast"
     >
-      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-5">
+      <div className="mb-5 grid grid-cols-2 gap-2.5 md:grid-cols-5">
         <MiniStat label="Today" value={formatCents(f.startBalanceCents)} />
         <MiniStat label="Balance in 30 days" value={formatCents(f.endBalanceCents)} tone={f.endBalanceCents < 0 ? "bad" : undefined} />
         <MiniStat label="Expected income" value={`+${formatCents(f.incomeCents)}`} />
@@ -384,14 +393,14 @@ export function ForecastCard({
         role="status"
         className={`mt-3 flex items-start gap-2 rounded-xl px-3 py-2 text-sm ${
           dips
-            ? "border border-red-600/30 bg-red-600/10 font-medium text-red-700 dark:text-red-400"
-            : "bg-muted text-muted-foreground"
+            ? "border border-destructive/30 bg-destructive/10 font-medium text-destructive"
+            : "well text-muted-foreground"
         }`}
       >
         {dips ? (
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
         ) : (
-          <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" aria-hidden="true" />
+          <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-success" aria-hidden="true" />
         )}
         <span>
           {dips
@@ -438,8 +447,8 @@ export function PredictionCard({
               ~{formatCents(p.totalCents)}
             </span>
             {p.lastMonthTotalCents > 0 && (
-              <Trend delta={delta} good={delta <= 0}>
-                {formatCents(Math.abs(delta))} {delta <= 0 ? "less" : "more"} than {lastMonthLabel} ({formatCents(p.lastMonthTotalCents)})
+              <Trend delta={delta} good={delta <= 0} figure={formatCents(Math.abs(delta))}>
+                {delta <= 0 ? "less" : "more"} than {lastMonthLabel} ({formatCents(p.lastMonthTotalCents)})
               </Trend>
             )}
           </div>
@@ -467,7 +476,7 @@ export function PredictionCard({
                     />
                   </div>
                   {overBudget && (
-                    <p className="mt-1 flex items-center gap-1 text-xs font-medium text-red-700 dark:text-red-400">
+                    <p className="mt-1 flex items-center gap-1 text-xs font-medium text-destructive">
                       <AlertTriangle className="h-3 w-3" aria-hidden="true" />
                       Likely over its {formatCents(limit)} budget
                     </p>
@@ -502,7 +511,7 @@ export function CardOptimizerCard({ result }: { result: CardOptimizer }) {
         <Empty>Add cards and some spending history to see which card to use where.</Empty>
       ) : (
         <>
-          <div className="mb-4 rounded-xl bg-muted px-4 py-3">
+          <div className="well mb-4 px-4 py-3.5">
             {r.missedCents > 0 ? (
               <p className="text-sm text-foreground">
                 You could be earning about{" "}
@@ -531,7 +540,7 @@ export function CardOptimizerCard({ result }: { result: CardOptimizer }) {
                   {row.missedCents > 0 ? (
                     <span className="flex-shrink-0 font-semibold tabular-nums text-primary">+{formatCents(row.missedCents)}/mo</span>
                   ) : (
-                    <span className="inline-flex flex-shrink-0 items-center gap-1 text-xs font-medium text-green-700 dark:text-green-400">
+                    <span className="inline-flex flex-shrink-0 items-center gap-1 text-xs font-medium text-success">
                       <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                       Optimal
                     </span>

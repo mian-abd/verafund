@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ShieldCheck, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import { guardSelectedAction } from "@/app/app/discovery-actions";
 import { MerchantLogo } from "@/components/MerchantLogo";
+import { Chip as BaseChip, type ChipTone } from "@/components/Page";
 import { SubmitButton } from "@/components/ui";
 import { confidenceLabel } from "@/lib/discovery-core";
 import { formatCents, formatShortDate } from "@/lib/format";
@@ -28,22 +29,13 @@ export interface DiscoveryRow {
 
 type Tone = "ok" | "info" | "warn" | "muted" | "brand";
 
-const TONES: Record<Tone, string> = {
-  ok: "bg-green-600/10 text-green-700 dark:text-green-400 border-green-600/30",
-  info: "bg-blue-600/10 text-blue-700 dark:text-blue-300 border-blue-600/30",
-  warn: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40",
-  muted: "bg-muted text-muted-foreground border-border",
-  brand: "bg-primary/10 text-primary border-primary/30",
-};
+const CHIP_TONE: Record<Tone, ChipTone> = { ok: "success", info: "info", warn: "warning", muted: "muted", brand: "brand" };
 
 function Chip({ tone, testId, children }: { tone: Tone; testId?: string; children: React.ReactNode }) {
   return (
-    <span
-      data-testid={testId}
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${TONES[tone]}`}
-    >
+    <BaseChip tone={CHIP_TONE[tone]} testId={testId} className="!px-2 !text-[11px]">
       {children}
-    </span>
+    </BaseChip>
   );
 }
 
@@ -65,7 +57,7 @@ function Row({ row, id, checked, onToggle }: { row: DiscoveryRow; id: string; ch
       data-testid="discovery-row"
       data-merchant={row.merchant}
       data-guarded={row.alreadyGuarded ? "true" : "false"}
-      className="flex items-start gap-3 px-4 py-3"
+      className={`flex items-start gap-3 px-4 py-3.5 transition-colors ${row.alreadyGuarded ? "opacity-70" : "hover:bg-muted/40"}`}
     >
       <input
         id={id}
@@ -138,7 +130,7 @@ function Group({
         </h3>
         {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
-      <ul className="divide-y divide-border rounded-xl border border-border bg-background">
+      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
         {rows.map((row) => (
           <Row key={row.key} row={row} id={ids.get(row.key)!} checked={selected.has(row.key)} onToggle={() => toggle(row.key)} />
         ))}

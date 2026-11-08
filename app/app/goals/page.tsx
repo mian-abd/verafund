@@ -1,4 +1,6 @@
+import { PiggyBank, Receipt, Scale } from "lucide-react";
 import { ErrorBanner } from "@/components/guard";
+import { PageHeader, SectionHeading, StatTile } from "@/components/Page";
 import { PayoffPlanner } from "@/components/goals/PayoffPlanner";
 import { BudgetsList, DebtsList, GoalsSection } from "@/components/goals/sections";
 import { getFinance, spendByCategory, startOfMonth } from "@/lib/finance";
@@ -11,19 +13,9 @@ function Notice({ message }: { message?: string }) {
     <div
       role="status"
       data-testid="goals-notice"
-      className="rounded-xl border border-green-600/30 bg-green-600/10 px-4 py-3 text-sm font-medium text-green-700 dark:text-green-400"
+      className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success"
     >
       {message}
-    </div>
-  );
-}
-
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xl font-bold tabular-nums text-foreground">{value}</p>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -45,29 +37,24 @@ export default async function GoalsPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="mx-auto max-w-5xl space-y-10">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Goals, debt and budgets</h1>
-        <p className="text-sm text-muted-foreground">Save for what matters, pay debt down faster and stay inside your monthly limits.</p>
-      </div>
+      <PageHeader
+        title="Goals, debt and budgets"
+        description="Save for what matters, pay debt down faster and stay inside your monthly limits."
+      />
 
       <ErrorBanner message={error} />
       <Notice message={notice} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" data-testid="goals-summary">
-        <Stat label="Saved toward goals" value={formatCents(saved)} hint={`of ${formatCents(target)} target`} />
-        <Stat label="Total debt" value={formatCents(owed)} hint={`${debts.length} ${debts.length === 1 ? "account" : "accounts"}`} />
-        <Stat label={`Spent in ${monthLabel}`} value={formatCents(budgetSpent)} hint={`of ${formatCents(budgetLimit)} budgeted`} />
+        <StatTile label="Saved toward goals" value={formatCents(saved)} hint={`of ${formatCents(target)} target`} icon={<PiggyBank size={16} aria-hidden="true" />} tone="success" />
+        <StatTile label="Total debt" value={formatCents(owed)} hint={`${debts.length} ${debts.length === 1 ? "account" : "accounts"}`} icon={<Scale size={16} aria-hidden="true" />} />
+        <StatTile label={`Spent in ${monthLabel}`} value={formatCents(budgetSpent)} hint={`of ${formatCents(budgetLimit)} budgeted`} icon={<Receipt size={16} aria-hidden="true" />} />
       </div>
 
       <GoalsSection goals={goals} now={now} />
 
       <section data-testid="debts-section" aria-labelledby="debts-heading" className="space-y-4">
-        <div>
-          <h2 id="debts-heading" className="text-xl font-bold tracking-tight text-foreground">
-            Debt
-          </h2>
-          <p className="text-sm text-muted-foreground">Record payments as you make them and see the fastest way out.</p>
-        </div>
+        <SectionHeading id="debts-heading" title="Debt" description="Record payments as you make them and see the fastest way out." />
         <DebtsList debts={debts} />
         <PayoffPlanner
           nowMs={now}
@@ -82,12 +69,11 @@ export default async function GoalsPage({ searchParams }: { searchParams: Promis
       </section>
 
       <section data-testid="budgets-section" aria-labelledby="budgets-heading" className="space-y-4">
-        <div>
-          <h2 id="budgets-heading" className="text-xl font-bold tracking-tight text-foreground">
-            Budgets
-          </h2>
-          <p className="text-sm text-muted-foreground">Month-to-date spending for {monthLabel}, excluding transfers and blocked charges.</p>
-        </div>
+        <SectionHeading
+          id="budgets-heading"
+          title="Budgets"
+          description={`Month-to-date spending for ${monthLabel}, excluding transfers and blocked charges.`}
+        />
         <BudgetsList budgets={budgets} spend={spend} />
       </section>
     </div>

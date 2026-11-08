@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { jumpAheadAction, resetDemoAction } from "../actions";
+import { CalendarDays, ShieldCheck } from "lucide-react";
+import { jumpAheadAction } from "../actions";
 import { AppNav } from "@/components/AppNav";
+import { UserMenu } from "@/components/UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReturnTo, SubmitButton } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -68,14 +70,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-background md:flex">
-      <aside className="hidden md:flex w-60 flex-shrink-0 border-r border-border bg-card flex-col sticky top-0 h-screen">
-        <div className="p-6 pb-4">
+      <aside className="hidden md:flex w-64 flex-shrink-0 border-r border-border bg-card flex-col sticky top-0 h-screen">
+        <div className="px-6 pt-6 pb-5">
           <Logo />
         </div>
         <AppNav orientation="vertical" />
-        <div className="m-3 rounded-xl border border-border bg-background p-4 text-xs text-muted-foreground space-y-2">
-          <p className="font-semibold text-foreground">Private workspace</p>
-          <p>
+        <div className="m-3 space-y-2 rounded-xl border border-border bg-muted/50 p-4 text-xs text-muted-foreground">
+          <p className="flex items-center gap-2 font-semibold text-foreground">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-success/10 text-success">
+              <ShieldCheck size={14} aria-hidden="true" />
+            </span>
+            Private workspace
+          </p>
+          <p className="leading-relaxed">
             {llmProvider() === "ollama"
               ? "Vera's language model runs on this device's GPU. Sandbox cards: no real money moves."
               : agentLlmProvider() === "ollama"
@@ -86,7 +93,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="border-b border-border bg-card px-4 md:px-6 py-3 space-y-3 md:space-y-0 md:flex md:items-center md:justify-between md:gap-4">
+        <header className="sticky top-0 z-30 space-y-3 border-b border-border bg-card px-4 py-3 shadow-[0_1px_0_rgba(38,28,18,0.02)] md:flex md:items-center md:justify-between md:gap-4 md:space-y-0 md:px-8">
           <div className="flex items-center justify-between gap-3 md:hidden">
             <Logo />
             <div className="flex items-center gap-2">
@@ -99,9 +106,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <AiBadge />
-            <span className="text-sm text-muted-foreground" data-testid="demo-date">
-              Today: <span className="font-medium text-foreground">{formatDate(now)}</span>
-              {workspace.clockOffsetDays > 0 && ` (+${workspace.clockOffsetDays} days)`}
+            <span
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-sm text-muted-foreground"
+              data-testid="demo-date"
+            >
+              <CalendarDays size={14} aria-hidden="true" className="text-primary" />
+              <span>
+                Today: <span className="font-medium text-foreground">{formatDate(now)}</span>
+                {workspace.clockOffsetDays > 0 && ` (+${workspace.clockOffsetDays} days)`}
+              </span>
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -111,11 +124,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 Jump ahead 8 days
               </SubmitButton>
             </form>
-            <form action={resetDemoAction}>
-              <SubmitButton variant="ghost" pendingText="Resetting…">
-                Start over
-              </SubmitButton>
-            </form>
+            <UserMenu />
             <div className="hidden md:flex items-center gap-2">
               {bell}
               <ThemeToggle />
@@ -123,7 +132,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 p-4 pb-24 md:p-6 md:pb-24">{children}</main>
+        <main className="app-canvas flex-1 p-4 pb-28 md:px-8 md:py-8 md:pb-28">{children}</main>
         <VeraDock />
       </div>
     </div>

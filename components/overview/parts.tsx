@@ -1,13 +1,15 @@
 // Small presentational pieces for the Overview page (server-renderable).
 
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus } from "lucide-react";
+import { ArrowRight, Inbox } from "lucide-react";
 import type { ReactNode } from "react";
+import { DeltaChip, StatTile } from "@/components/Page";
 
 export function Card({
   title,
   subtitle,
   action,
+  aside,
   badge,
   testId,
   className = "",
@@ -16,33 +18,40 @@ export function Card({
   title: string;
   subtitle?: string;
   action?: { href: string; label: string };
+  /** Anything that belongs in the header's right edge, such as a chart legend. */
+  aside?: ReactNode;
   badge?: string;
   testId?: string;
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <section data-testid={testId} className={`min-w-0 rounded-2xl border border-border bg-card p-5 ${className}`}>
-      <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+    <section data-testid={testId} className={`surface min-w-0 p-5 sm:p-6 ${className}`}>
+      <header className="mb-5 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold text-foreground">
+          <h2 className="flex flex-wrap items-center gap-2 text-[15px] font-semibold tracking-tight text-foreground">
             {title}
             {badge && (
-              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {badge}
               </span>
             )}
           </h2>
           {subtitle && <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>}
         </div>
-        {action && (
-          <Link
-            href={action.href}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-sm font-medium text-primary hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            {action.label}
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
+        {(aside || action) && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {aside}
+            {action && (
+              <Link
+                href={action.href}
+                className="group inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-medium text-primary transition-colors hover:bg-primary/10"
+              >
+                {action.label}
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+              </Link>
+            )}
+          </div>
         )}
       </header>
       {children}
@@ -50,57 +59,81 @@ export function Card({
   );
 }
 
+/** A legend that lives in the card header: colored dot plus label. */
+export function ChartLegend({ items }: { items: { label: string; color: string }[] }) {
+  return (
+    <ul className="flex items-center gap-4 text-xs font-medium text-muted-foreground" aria-hidden="true">
+      {items.map((i) => (
+        <li key={i.label} className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-[4px]" style={{ background: i.color }} />
+          {i.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function Stat({
   label,
   value,
   testId,
+  icon,
   children,
 }: {
   label: string;
   value: string;
   testId: string;
+  icon?: ReactNode;
   children?: ReactNode;
 }) {
   return (
-    <div data-testid={testId} className="min-w-0 rounded-2xl border border-border bg-card p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 truncate text-xl font-bold tabular-nums text-foreground sm:text-2xl">{value}</p>
-      <div className="mt-1 text-xs text-muted-foreground">{children}</div>
-    </div>
+    <StatTile label={label} value={value} testId={testId} icon={icon}>
+      {children}
+    </StatTile>
   );
 }
 
-/** Trend text with an arrow. `good` decides the color; direction comes from the sign of `delta`. */
-export function Trend({ delta, good, children }: { delta: number; good: boolean; children: ReactNode }) {
+/**
+ * Delta chip with an arrow, plus the sentence that explains it. `good` decides the color;
+ * direction comes from the sign of `delta`. `figure` is the short number shown in the chip.
+ */
+export function Trend({
+  delta,
+  good,
+  figure,
+  children,
+}: {
+  delta: number;
+  good: boolean;
+  figure: string;
+  children: ReactNode;
+}) {
   const flat = Math.abs(delta) < 0.05;
-  const Icon = flat ? Minus : delta > 0 ? ArrowUpRight : ArrowDownRight;
-  const tone = flat
-    ? "text-muted-foreground"
-    : good
-      ? "text-green-700 dark:text-green-400"
-      : "text-red-700 dark:text-red-400";
   return (
-    <span className={`inline-flex items-center gap-1 font-medium ${tone}`}>
-      <Icon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
-      <span>{children}</span>
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <DeltaChip direction={flat ? "flat" : delta > 0 ? "up" : "down"} good={good}>
+        {figure}
+      </DeltaChip>
+      <span className="text-muted-foreground">{children}</span>
     </span>
   );
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  posted: "border-green-600/30 bg-green-600/10 text-green-700 dark:text-green-400",
-  pending: "border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-300",
-  flagged: "border-orange-500/40 bg-orange-500/15 text-orange-800 dark:text-orange-300",
-  blocked: "border-red-600/40 bg-red-600/10 text-red-700 dark:text-red-400",
+  posted: "bg-success/10 text-success",
+  pending: "bg-warning/10 text-warning",
+  flagged: "bg-primary/10 text-primary",
+  blocked: "bg-destructive/10 text-destructive",
 };
 
 export function StatusBadge({ status }: { status: string }) {
-  const style = STATUS_STYLES[status] ?? "border-border bg-muted text-muted-foreground";
+  const style = STATUS_STYLES[status] ?? "bg-muted text-muted-foreground";
   return (
     <span
       data-testid={`status-${status}`}
-      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${style}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${style}`}
     >
+      <span className="h-1 w-1 rounded-full bg-current" aria-hidden="true" />
       {status}
     </span>
   );
@@ -116,7 +149,12 @@ export function ProgressBar({
   tone?: "primary" | "danger" | "success";
 }) {
   const clamped = Math.max(0, Math.min(100, pct));
-  const fill = tone === "danger" ? "bg-destructive" : tone === "success" ? "bg-green-600" : "bg-primary";
+  const fill =
+    tone === "danger"
+      ? "bg-gradient-to-r from-destructive/80 to-destructive"
+      : tone === "success"
+        ? "bg-gradient-to-r from-income/75 to-income"
+        : "bg-gradient-to-r from-primary/80 to-primary";
   return (
     <div
       role="progressbar"
@@ -124,21 +162,24 @@ export function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(clamped)}
-      className="h-2 w-full overflow-hidden rounded-full bg-muted"
+      className="h-2 w-full overflow-hidden rounded-full bg-muted shadow-[inset_0_1px_1px_rgba(0,0,0,0.06)]"
     >
-      <div className={`h-full rounded-full ${fill}`} style={{ width: `${clamped}%` }} />
+      <div className={`h-full rounded-full transition-[width] duration-500 ${fill}`} style={{ width: `${clamped}%` }} />
     </div>
   );
 }
 
-export function Empty({ children }: { children: ReactNode }) {
+export function Empty({ children, icon }: { children: ReactNode; icon?: ReactNode }) {
   return (
-    <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-      {children}
-    </p>
+    <div className="flex flex-col items-center gap-2.5 rounded-xl border border-dashed border-border bg-muted/30 px-4 py-8 text-center">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        {icon ?? <Inbox className="h-[18px] w-[18px]" aria-hidden="true" />}
+      </span>
+      <p className="max-w-xs text-sm text-muted-foreground">{children}</p>
+    </div>
   );
 }
 
 export function EstimateNote({ children }: { children: ReactNode }) {
-  return <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{children}</p>;
+  return <p className="mt-4 border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground">{children}</p>;
 }

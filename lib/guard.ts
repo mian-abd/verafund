@@ -27,7 +27,7 @@ export const DAY_MS = 86_400_000;
 export class GuardError extends Error {}
 export class WorkspaceMissingError extends GuardError {
   constructor() {
-    super("Your session has expired. Get started again.");
+    super("Your session has expired. Log in again.");
   }
 }
 
@@ -110,6 +110,9 @@ async function logEvent(
   });
 }
 
+const NETWORK_PAUSE_MS = 10 * 60 * 1000;
+let networkPausedUntil = 0;
+
 async function buildSubscription(
   payments: PaymentsAdapter,
   workspaceId: string,
@@ -118,12 +121,22 @@ async function buildSubscription(
   now: number,
 ): Promise<Subscription> {
   const id = randomUUID();
-  const card = await payments.createCard({
-    merchant: input.merchant,
-    limitCents: input.amountCents,
-    workspaceId,
-    subscriptionId: id,
-  });
+  const cardInput = { merchant: input.merchant, limitCents: input.amountCents, workspaceId, subscriptionId: id };
+  // If the card network refuses (sandbox rate limits, an outage), the subscription still
+  // gets a VeraFund card enforced by our own rules, and the network is skipped for a while
+  // so sign-up stays fast.
+  let provider: PaymentsAdapter = payments;
+  if (payments.mode !== "simulated" && Date.now() < networkPausedUntil) provider = adapterFor("simulated");
+  let card: { cardId: string; last4: string };
+  try {
+    card = await provider.createCard(cardInput);
+  } catch (err) {
+    if (provider.mode === "simulated") throw err;
+    console.error(`[guard] ${provider.mode} card creation failed, using a VeraFund card:`, err instanceof Error ? err.message : err);
+    networkPausedUntil = Date.now() + NETWORK_PAUSE_MS;
+    provider = adapterFor("simulated");
+    card = await provider.createCard(cardInput);
+  }
   const isTrial = input.trialDays !== null;
   return {
     id,
@@ -136,7 +149,7 @@ async function buildSubscription(
     status: isTrial ? "trial" : "active",
     trialEndsAt: isTrial ? now + input.trialDays! * DAY_MS : null,
     limitCents: input.amountCents,
-    cardProvider: payments.mode,
+    cardProvider: provider.mode,
     cardId: card.cardId,
     cardLast4: card.last4,
     cardStatus: "active",

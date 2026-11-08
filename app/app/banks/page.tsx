@@ -2,6 +2,7 @@ import { Landmark, RefreshCw } from "lucide-react";
 import { quickConnectAction, syncBankAction } from "./actions";
 import { PlaidConnect } from "@/components/banks/PlaidConnect";
 import { ErrorBanner } from "@/components/guard";
+import { Chip, IconBadge, PageHeader, SectionHeading } from "@/components/Page";
 import { SubmitButton } from "@/components/ui";
 import { getFinance } from "@/lib/finance";
 import { formatCents, formatDateTime } from "@/lib/format";
@@ -19,23 +20,20 @@ export default async function BanksPage({
   const configured = plaidConfigured();
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6" data-testid="banks-page">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Bank connections</h1>
-        <p className="text-sm text-muted-foreground">
-          Link a bank through Plaid to import its accounts and transactions. Your bank login goes to Plaid, never to
-          VeraFund.
-        </p>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6" data-testid="banks-page">
+      <PageHeader
+        title="Bank connections"
+        description="Link a bank through Plaid to import its accounts and transactions. Your bank login goes to Plaid, never to VeraFund."
+      />
 
       <ErrorBanner message={error} />
       {notice && (
-        <div role="status" className="rounded-xl border border-green-600/30 bg-green-600/10 px-4 py-3 text-sm text-green-700 dark:text-green-400">
+        <div role="status" className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">
           {notice}
         </div>
       )}
 
-      <section className="rounded-2xl border border-border bg-card p-5 space-y-4" data-testid="connect-bank">
+      <section className="surface space-y-4 bg-gradient-to-br from-primary/[0.06] via-transparent to-transparent p-5 sm:p-6" data-testid="connect-bank">
         {configured ? (
           <>
             <div className="flex flex-wrap items-center gap-3">
@@ -57,18 +55,21 @@ export default async function BanksPage({
       </section>
 
       <section className="space-y-3" data-testid="linked-banks">
-        <h2 className="text-lg font-semibold text-foreground">Linked banks</h2>
+        <SectionHeading title="Linked banks" />
         {banks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No banks linked yet.</p>
+          <p className="well px-4 py-6 text-center text-sm text-muted-foreground">No banks linked yet.</p>
         ) : (
           banks.map((b) => (
-            <div key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
+            <div key={b.id} className="surface flex flex-wrap items-center justify-between gap-3 p-4">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <IconBadge>
                   <Landmark size={18} aria-hidden="true" />
-                </span>
+                </IconBadge>
                 <div>
-                  <p className="font-semibold text-foreground">{b.institutionName}</p>
+                  <p className="flex items-center gap-2 font-semibold text-foreground">
+                    {b.institutionName}
+                    <Chip tone="success" className="!text-[11px]">Connected</Chip>
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {b.importedCount} transactions imported
                     {b.lastSyncedAt ? ` · synced ${formatDateTime(b.lastSyncedAt)}` : ""}
@@ -87,18 +88,18 @@ export default async function BanksPage({
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-foreground">All accounts</h2>
+        <SectionHeading title="All accounts" />
         <div className="grid gap-3 sm:grid-cols-2">
           {finance.accounts.map((a) => (
-            <div key={a.id} className="rounded-2xl border border-border bg-card p-4" data-testid="account-card">
+            <div key={a.id} className="surface p-4" data-testid="account-card">
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: a.color }} aria-hidden="true" />
+                <span className="h-2.5 w-2.5 rounded-full ring-4 ring-muted" style={{ background: a.color }} aria-hidden="true" />
                 <p className="text-sm font-semibold text-foreground">{a.name}</p>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {a.institution} · {a.type}
+                <span className="capitalize">{a.institution} · {a.type}</span>
               </p>
-              <p className="mt-2 text-xl font-bold tabular-nums text-foreground">{formatCents(a.balanceCents)}</p>
+              <p className="mt-3 text-2xl font-semibold tracking-tight tabular-nums text-foreground">{formatCents(a.balanceCents)}</p>
             </div>
           ))}
         </div>

@@ -16,12 +16,13 @@ export default async function Home({
 }) {
   const { error, expired } = await searchParams;
   const workspaceId = await getWorkspaceId();
-  const hasDemo = workspaceId ? Boolean(await getWorkspace(workspaceId).catch(() => null)) : false;
+  // Anyone with a live workspace (demo or signed in) gets "Open dashboard" in the navbar.
+  const hasWorkspace = workspaceId ? Boolean(await getWorkspace(workspaceId).catch(() => null)) : false;
 
   return (
     <div id="top" className="min-h-screen bg-background">
-      <Navbar hasDemo={hasDemo} />
-      <HeroSection hasDemo={hasDemo} error={error} expired={Boolean(expired)} />
+      <Navbar hasWorkspace={hasWorkspace} />
+      <HeroSection error={error} expired={Boolean(expired)} />
       <LogoMarquee />
       <FeaturesSection />
       <HowItWorks />

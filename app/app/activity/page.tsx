@@ -1,5 +1,6 @@
 import { DecisionLog } from "@/components/DecisionLog";
 import { ErrorBanner, Timeline } from "@/components/guard";
+import { PageHeader, SectionHeading } from "@/components/Page";
 import { getActivity } from "@/lib/guard";
 import { getWorkspaceId } from "@/lib/session";
 
@@ -9,16 +10,14 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
   const { timeline, merchantById } = await getActivity(workspaceId);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Activity</h1>
-        <p className="text-sm text-muted-foreground">
-          Every charge decision and policy change, newest first.
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader title="Activity" description="Every charge decision and policy change, newest first." />
       <ErrorBanner message={error} />
       <DecisionLog workspaceId={workspaceId} />
-      <Timeline items={timeline} merchantById={merchantById} />
+      <section className="space-y-3" aria-labelledby="timeline-heading">
+        <SectionHeading id="timeline-heading" title="Timeline" description="Charges and rule changes across all your cards." />
+        <Timeline items={timeline} merchantById={merchantById} />
+      </section>
     </div>
   );
 }

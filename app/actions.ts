@@ -19,7 +19,8 @@ import {
   WorkspaceMissingError,
 } from "@/lib/guard";
 import { parseDollarsToCents } from "@/lib/format";
-import { getWorkspaceId, setWorkspaceId } from "@/lib/session";
+import { clearWorkspaceId, getWorkspaceId, setWorkspaceId } from "@/lib/session";
+import { checkCredentials, LOGIN_ERROR, setDisplayName, validateSignUp } from "@/lib/auth";
 import { getDb } from "@/lib/db/client";
 import { notifications } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -27,7 +28,7 @@ import { eq } from "drizzle-orm";
 function userMessage(err: unknown): string {
   if (err instanceof GuardError) return err.message;
   if (err instanceof Stripe.errors.StripeError) return `Stripe sandbox error: ${err.message}`;
-  return "Something went wrong. Try again, or start over.";
+  return "Something went wrong. Please try again.";
 }
 
 function returnPath(formData: FormData): string {
@@ -71,6 +72,57 @@ export async function startDemo() {
   }
   await setWorkspaceId(workspaceId);
   redirect("/app");
+}
+
+// ---------- front door: sign up / log in / log out ----------
+// No accounts are stored. Logging in checks one demo login, sign-up just takes a name,
+// and both open a fresh workspace with sample data. The vf_ws cookie is the session.
+
+function formText(formData: FormData, name: string): string {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}
+
+export async function signUpAction(formData: FormData) {
+  const checked = validateSignUp({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+  if (!checked.ok) redirect(`/signup?error=${encodeURIComponent(checked.error)}`);
+
+  let workspaceId: string;
+  try {
+    workspaceId = await createDemoWorkspace();
+    // Best effort: the greeting uses the entered name, but a failed rename must not block sign-up.
+    await setDisplayName(workspaceId, checked.name).catch((err) => console.error("[signUp] name", err));
+  } catch (err) {
+    console.error("[signUpAction]", err);
+    redirect(`/signup?error=${encodeURIComponent(userMessage(err))}`);
+  }
+  await setWorkspaceId(workspaceId);
+  redirect("/app");
+}
+
+export async function logInAction(formData: FormData) {
+  if (!checkCredentials(formText(formData, "email"), formText(formData, "password"))) {
+    redirect(`/login?error=${encodeURIComponent(LOGIN_ERROR)}`);
+  }
+
+  let workspaceId: string;
+  try {
+    workspaceId = await createDemoWorkspace();
+  } catch (err) {
+    console.error("[logInAction]", err);
+    redirect(`/login?error=${encodeURIComponent(userMessage(err))}`);
+  }
+  await setWorkspaceId(workspaceId);
+  redirect("/app");
+}
+
+export async function logOutAction() {
+  await clearWorkspaceId();
+  redirect("/");
 }
 
 export async function simulateChargeAction(formData: FormData) {

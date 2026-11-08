@@ -1,6 +1,8 @@
 import { CategoryDonut } from "@/components/overview/CategoryDonut";
 import { IncomeSpendingChart } from "@/components/overview/IncomeSpendingChart";
-import { Card, Empty } from "@/components/overview/parts";
+import { Card, ChartLegend, Empty } from "@/components/overview/parts";
+import { INCOME_COLOR, SPEND_COLOR } from "@/components/overview/chartTheme";
+import { PageHeader } from "@/components/Page";
 import {
   BudgetsCard,
   CardOptimizerCard,
@@ -59,15 +61,23 @@ export default async function OverviewPage() {
   const budgetLimits = Object.fromEntries(f.budgets.map((b) => [b.category, b.limitCents]));
   const firstName = f.profile?.displayName.split(" ")[0];
   const hasPartial = monthly.some((m) => m.partial);
+  const hasActivity = monthly.some((m) => m.incomeCents > 0 || m.spendingCents > 0);
 
   return (
     <div data-testid="overview-page" className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {firstName ? `Welcome back, ${firstName}` : "Overview"}
-        </h1>
-        <p className="text-sm text-muted-foreground">Your money at a glance as of {formatDate(now)}.</p>
-      </div>
+      <PageHeader
+        eyebrow="Overview"
+        title={
+          firstName ? (
+            <>
+              Welcome back, <span className="font-serif-display font-normal italic">{firstName}</span>
+            </>
+          ) : (
+            "Overview"
+          )
+        }
+        description={`Your money at a glance as of ${formatDate(now)}.`}
+      />
 
       <StatsRow netWorthCents={netWorthCents(f.accounts)} accountCount={f.accounts.length} summary={summary} />
 
@@ -77,14 +87,22 @@ export default async function OverviewPage() {
           subtitle="By month, last 6 months"
           testId="overview-income-spending"
           className="lg:col-span-3"
+          aside={
+            <ChartLegend
+              items={[
+                { label: "Income", color: INCOME_COLOR },
+                { label: "Spending", color: SPEND_COLOR },
+              ]}
+            />
+          }
         >
-          {monthly.length === 0 ? (
-            <Empty>No transactions yet.</Empty>
+          {monthly.length === 0 || !hasActivity ? (
+            <Empty>No transactions yet. Link a bank or add a purchase and your monthly trend shows up here.</Empty>
           ) : (
             <>
               <IncomeSpendingChart data={monthly} />
               {hasPartial && (
-                <p className="mt-2 text-xs text-muted-foreground">* Partial month: the current month, or one where your history starts part-way through.</p>
+                <p className="mt-3 text-xs text-muted-foreground">* Partial month: the current month, or one where your history starts part-way through.</p>
               )}
             </>
           )}
@@ -119,10 +137,10 @@ export default async function OverviewPage() {
 
       <section data-testid="overview-insights" aria-labelledby="insights-heading" className="space-y-4">
         <div>
-          <h2 id="insights-heading" className="text-lg font-bold tracking-tight text-foreground">
+          <h2 id="insights-heading" className="text-lg font-semibold tracking-tight text-foreground">
             Insights
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="mt-0.5 text-sm text-muted-foreground">
             Forward-looking estimates based on your own history. Treat them as guidance, not promises.
           </p>
         </div>

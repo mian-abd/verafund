@@ -23,7 +23,7 @@ function reply(body: Record<string, unknown>, status = 200, headers: Record<stri
 
 export async function POST(request: Request) {
   const workspaceId = await getWorkspaceId();
-  if (!workspaceId) return reply({ error: "Your session expired. Get started again." }, 401);
+  if (!workspaceId) return reply({ error: "Your session expired. Log in again." }, 401);
 
   // Reading photos needs Claude. In private mode photos stay on the device.
   if (!visionEnabled()) {

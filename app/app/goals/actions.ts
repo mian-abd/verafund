@@ -74,7 +74,7 @@ export async function addGoalAction(formData: FormData) {
     if (!GOAL_ICON_NAMES.includes(icon)) throw new InputError("Pick an icon for your goal.");
 
     const ws = await getWorkspace(workspaceId);
-    if (!ws) throw new InputError("Your session expired. Get started again from the home page.");
+    if (!ws) throw new InputError("Your session expired. Log in again from the home page.");
     const now = workspaceNow(ws);
 
     let dueAt: number | null = null;

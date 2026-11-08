@@ -4,15 +4,15 @@ import { parseRiskSignals, severityOf, signalLabel, type Severity } from "@/lib/
 import { formatCents, formatDateTime } from "@/lib/format";
 
 const STATUS_STYLES: Record<Transaction["status"], string> = {
-  posted: "bg-green-600/10 text-green-700 dark:text-green-400 border-green-600/30",
-  pending: "bg-blue-600/10 text-blue-700 dark:text-blue-300 border-blue-600/30",
-  flagged: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40",
-  blocked: "bg-destructive/10 text-destructive border-destructive/40",
+  posted: "bg-success/10 text-success",
+  pending: "bg-info/10 text-info",
+  flagged: "bg-warning/10 text-warning",
+  blocked: "bg-destructive/10 text-destructive",
 };
 
 const SEVERITY_STYLES: Record<Severity, string> = {
-  low: "bg-green-600/10 text-green-700 dark:text-green-400",
-  medium: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
+  low: "bg-success/10 text-success",
+  medium: "bg-warning/10 text-warning",
   high: "bg-destructive/10 text-destructive",
 };
 
@@ -20,8 +20,9 @@ export function StatusBadge({ status }: { status: Transaction["status"] }) {
   return (
     <span
       data-testid="tx-status"
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${STATUS_STYLES[status]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${STATUS_STYLES[status]}`}
     >
+      <span className="h-1 w-1 rounded-full bg-current" aria-hidden="true" />
       {status}
     </span>
   );
@@ -59,7 +60,7 @@ function RiskDetail({ tx }: { tx: Transaction }) {
   if (signals.length === 0) return <div className="mt-2">{summary}</div>;
   const open = tx.status === "flagged" || tx.status === "blocked" || severity !== "low";
   return (
-    <details open={open} className="mt-2 rounded-xl border border-border bg-muted/40 px-3 py-2" data-testid="risk-detail">
+    <details open={open} className="well mt-2.5 px-3 py-2" data-testid="risk-detail">
       <summary className="cursor-pointer list-none">{summary}</summary>
       <div className="mt-2">{body}</div>
     </details>
@@ -70,15 +71,15 @@ export function TransactionRow({ tx, accountName }: { tx: Transaction; accountNa
   const income = tx.amountCents > 0;
   const amount = `${income ? "+" : "−"}${formatCents(Math.abs(tx.amountCents))}`;
   return (
-    <li className="p-4" data-testid="transaction-row" data-status={tx.status}>
+    <li className="p-4 transition-colors hover:bg-muted/30" data-testid="transaction-row" data-status={tx.status}>
       <div className="flex items-start gap-3">
-        <MerchantLogo name={tx.merchant} size={36} />
+        <MerchantLogo name={tx.merchant} size={40} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
             <p className="min-w-0 break-words text-sm font-semibold text-foreground">{tx.merchant}</p>
             <p
-              className={`text-sm font-semibold tabular-nums ${
-                income ? "text-green-600 dark:text-green-400" : tx.status === "blocked" ? "text-muted-foreground line-through" : "text-foreground"
+              className={`text-[15px] font-semibold tabular-nums ${
+                income ? "text-success" : tx.status === "blocked" ? "text-muted-foreground line-through" : "text-foreground"
               }`}
               data-testid="tx-amount"
             >
