@@ -80,7 +80,7 @@ export default async function SubscriptionDetailPage({
             <Row label="Per-charge limit" value={formatCents(sub.limitCents)} />
             <Row label="Card status" value={sub.cardStatus} />
             {sub.trialEndsAt !== null && <Row label="Trial ends" value={formatDate(sub.trialEndsAt)} />}
-            <Row label="Card network" value={sub.cardProvider === "stripe" ? "Stripe Issuing (sandbox)" : "Simulated"} />
+            <Row label="Card network" value={sub.cardProvider === "stripe" ? "Stripe Issuing (sandbox)" : sub.cardProvider === "lithic" ? "Lithic virtual card (sandbox)" : "Simulated"} />
             <Row label="Card ID" value={sub.cardId} />
           </dl>
           <div className="flex flex-wrap gap-2">

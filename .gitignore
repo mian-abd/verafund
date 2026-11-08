@@ -37,3 +37,10 @@ Thumbs.db
 # local working notes (not published)
 log.md
 Context.md
+
+# presenter notes and scripts (kept local, not published)
+DEMO.md
+VISION.md
+TEST_SCRIPT.md
+PITCH.md
+presenter/

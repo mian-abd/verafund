@@ -1,6 +1,6 @@
 import type { CardStatus, ProviderResult } from "../engine";
 
-export type PaymentsMode = "stripe" | "simulated";
+export type PaymentsMode = "stripe" | "lithic" | "simulated";
 
 export interface CreateCardInput {
   merchant: string;

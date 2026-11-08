@@ -60,7 +60,8 @@ export function DecisionBadge({ approved }: { approved: boolean }) {
 
 function enforcedBy(charge: Charge): string {
   if (charge.provider === "simulated") return "Simulated decision";
-  return charge.providerReason ? `Stripe sandbox · ${charge.providerReason}` : "Stripe sandbox";
+  const network = charge.provider === "lithic" ? "Lithic sandbox" : "Stripe sandbox";
+  return charge.providerReason ? `${network} · ${charge.providerReason}` : network;
 }
 
 export function LastDecision({ charge }: { charge: Charge | null }) {

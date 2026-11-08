@@ -14,7 +14,7 @@ export function VirtualCard({
   category: string;
   last4: string;
   limitCents: number;
-  provider: "stripe" | "simulated";
+  provider: "stripe" | "lithic" | "simulated";
   locked: boolean;
   badge: string | null;
 }) {
@@ -36,7 +36,7 @@ export function VirtualCard({
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase opacity-60 mb-0.5">Network</p>
-          <p className="text-sm font-bold">{provider === "stripe" ? "Stripe sandbox" : "Simulated"}</p>
+          <p className="text-sm font-bold">{provider === "stripe" ? "Stripe sandbox" : provider === "lithic" ? "Lithic sandbox" : "Simulated"}</p>
         </div>
       </div>
       {badge && (

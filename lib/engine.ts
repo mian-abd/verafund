@@ -89,30 +89,32 @@ export function decide(policy: Policy, attempt: Attempt): Decision {
 
 // Stripe is the source of truth for the outcome; the local decision supplies the
 // human-readable reason. When they disagree we say so instead of hiding it.
-export function reconcile(local: Decision, provider: ProviderResult): Decision {
+export function reconcile(local: Decision, provider: ProviderResult, network = "Stripe"): Decision {
   if (provider.approved) {
     if (local.approved) return local;
     return {
       approved: true,
       reason: null,
-      text: `Approved by Stripe, but your policy expected a decline (${local.text})`,
+      text: `Approved by ${network}, but your policy expected a decline (${local.text})`,
     };
   }
   switch (provider.reason) {
     case "insufficient_funds":
       return decline(
         "insufficient_funds",
-        "Stripe sandbox Issuing balance is too low; add test funds in the Stripe dashboard",
+        network === "Stripe"
+          ? "Stripe sandbox Issuing balance is too low; add test funds in the Stripe dashboard"
+          : `${network} sandbox balance is too low`,
       );
     case "card_canceled":
-      return local.approved ? decline("card_closed", "Card is closed at Stripe") : local;
+      return local.approved ? decline("card_closed", `Card is closed at ${network}`) : local;
     case "card_inactive":
-      return local.approved ? decline("card_paused", "Card is inactive at Stripe") : local;
+      return local.approved ? decline("card_paused", `Card is inactive at ${network}`) : local;
     case "spending_controls":
-      return local.approved ? decline("provider_declined", "Declined by Stripe spending controls") : local;
+      return local.approved ? decline("provider_declined", `Declined by ${network} spending controls`) : local;
     default:
       return local.approved
-        ? decline("provider_declined", `Declined by Stripe (${provider.reason ?? "no reason given"})`)
+        ? decline("provider_declined", `Declined by ${network} (${provider.reason ?? "no reason given"})`)
         : local;
   }
 }

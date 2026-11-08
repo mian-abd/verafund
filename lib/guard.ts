@@ -20,7 +20,7 @@ import {
 } from "./db/schema";
 import { decide, reconcile, type Decision, type Policy } from "./engine";
 import { formatCents, formatShortDate } from "./format";
-import { adapterFor, getPayments, type PaymentsAdapter } from "./payments";
+import { adapterFor, getPayments, NETWORK_NAME, type PaymentsAdapter } from "./payments";
 
 export const DAY_MS = 86_400_000;
 
@@ -233,9 +233,9 @@ export async function simulateCharge(workspaceId: string, subscriptionId: string
   let providerAuthorizationId: string | null = null;
   let providerReason: string | null = null;
 
-  if (sub.cardProvider === "stripe") {
-    const result = await adapterFor("stripe").authorize({ cardId: sub.cardId, amountCents, merchant: sub.merchant });
-    decision = reconcile(local, result);
+  if (sub.cardProvider !== "simulated") {
+    const result = await adapterFor(sub.cardProvider).authorize({ cardId: sub.cardId, amountCents, merchant: sub.merchant });
+    decision = reconcile(local, result, NETWORK_NAME[sub.cardProvider]);
     providerAuthorizationId = result.authorizationId;
     providerReason = result.reason;
   }
