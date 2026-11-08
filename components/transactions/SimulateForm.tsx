@@ -21,7 +21,7 @@ export function SimulateForm() {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <FlaskConical size={16} aria-hidden="true" />
           </span>
-          Test a purchase
+          Check a purchase
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Vera scores it against your history. Nothing here moves real money.</p>
       </div>

@@ -40,7 +40,7 @@ export default async function BanksPage({
               <PlaidConnect />
               <form action={quickConnectAction}>
                 <SubmitButton variant="outline" pendingText="Connecting…">
-                  Connect a test bank instantly
+                  Connect a sandbox bank instantly
                 </SubmitButton>
               </form>
             </div>

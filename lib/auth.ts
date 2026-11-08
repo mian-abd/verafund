@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "./db/client";
 import { profiles } from "./db/schema";
 
-export const DEMO_EMAIL = process.env.DEMO_LOGIN_EMAIL || "demo@verafund.app";
+export const DEMO_EMAIL = process.env.DEMO_LOGIN_EMAIL || "alex@verafund.app";
 export const DEMO_PASSWORD = process.env.DEMO_LOGIN_PASSWORD || "vera2026";
 
 export const LOGIN_ERROR = "Email or password is incorrect.";

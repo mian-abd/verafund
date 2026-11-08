@@ -256,7 +256,7 @@ export function VirtualCard({
                 </button>
               </div>
               <p className="text-[11px] leading-snug text-muted-foreground">
-                {details.issuer === "stripe" ? "Stripe test-mode card · works in the sandbox only" : "Sandbox test card · not a real card number"}
+                {details.issuer === "stripe" ? "Stripe sandbox card · no real money moves" : "Sandbox card · no real money moves"}
               </p>
             </>
           ) : (

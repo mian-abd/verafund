@@ -8,7 +8,7 @@ import { getWorkspaceId } from "@/lib/session";
 export async function UserMenu() {
   const workspaceId = await getWorkspaceId();
   const name = workspaceId ? await getDisplayName(workspaceId).catch(() => null) : null;
-  const label = name?.trim() || "Demo account";
+  const label = name?.trim() || "My account";
 
   return (
     <div className="flex items-center gap-2" data-testid="user-menu">

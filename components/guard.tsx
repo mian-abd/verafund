@@ -124,8 +124,8 @@ export function ChargeCardForm({ sub }: { sub: Subscription }) {
     </form>
       <p className="max-w-sm text-xs leading-snug text-muted-foreground">
         {sub.cardProvider === "stripe"
-          ? "Sends a Stripe test-mode charge through this card. Your limit and trial rules decide the outcome."
-          : "Sends a test charge through this card. Your limit and trial rules decide the outcome."}
+          ? "Sends a charge through this Stripe card. Your limit and trial rules decide the outcome."
+          : "Sends a charge through this card. Your limit and trial rules decide the outcome."}
       </p>
     </div>
   );

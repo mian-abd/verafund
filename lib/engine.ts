@@ -103,7 +103,7 @@ export function reconcile(local: Decision, provider: ProviderResult, network = "
       return decline(
         "insufficient_funds",
         network === "Stripe"
-          ? "Stripe sandbox Issuing balance is too low; add test funds in the Stripe dashboard"
+          ? "Stripe sandbox Issuing balance is too low; add funds in the Stripe dashboard"
           : `${network} sandbox balance is too low`,
       );
     case "card_canceled":

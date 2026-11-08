@@ -36,36 +36,36 @@ afterEach(() => {
 
 describe("checkCredentials", () => {
   it("uses the documented defaults", () => {
-    expect(auth.DEMO_EMAIL).toBe("demo@verafund.app");
+    expect(auth.DEMO_EMAIL).toBe("alex@verafund.app");
     expect(auth.DEMO_PASSWORD).toBe("vera2026");
   });
 
   it("accepts the demo login", () => {
-    expect(auth.checkCredentials("demo@verafund.app", "vera2026")).toBe(true);
+    expect(auth.checkCredentials("alex@verafund.app", "vera2026")).toBe(true);
   });
 
   it("ignores case and surrounding spaces in the email, but not in the password", () => {
-    expect(auth.checkCredentials("  Demo@VeraFund.APP ", "vera2026")).toBe(true);
-    expect(auth.checkCredentials("demo@verafund.app", "Vera2026")).toBe(false);
-    expect(auth.checkCredentials("demo@verafund.app", " vera2026")).toBe(false);
+    expect(auth.checkCredentials("  Alex@VeraFund.APP ", "vera2026")).toBe(true);
+    expect(auth.checkCredentials("alex@verafund.app", "Vera2026")).toBe(false);
+    expect(auth.checkCredentials("alex@verafund.app", " vera2026")).toBe(false);
   });
 
   it("rejects a wrong password, a wrong email, and both", () => {
-    expect(auth.checkCredentials("demo@verafund.app", "wrong-password")).toBe(false);
+    expect(auth.checkCredentials("alex@verafund.app", "wrong-password")).toBe(false);
     expect(auth.checkCredentials("someone@else.com", "vera2026")).toBe(false);
     expect(auth.checkCredentials("someone@else.com", "nope")).toBe(false);
   });
 
   it("handles passwords of any length without throwing", () => {
-    expect(auth.checkCredentials("demo@verafund.app", "")).toBe(false);
-    expect(auth.checkCredentials("demo@verafund.app", "v")).toBe(false);
-    expect(auth.checkCredentials("demo@verafund.app", "vera2026".repeat(500))).toBe(false);
+    expect(auth.checkCredentials("alex@verafund.app", "")).toBe(false);
+    expect(auth.checkCredentials("alex@verafund.app", "v")).toBe(false);
+    expect(auth.checkCredentials("alex@verafund.app", "vera2026".repeat(500))).toBe(false);
   });
 
   it("rejects missing or non-string values", () => {
     expect(auth.checkCredentials(null, null)).toBe(false);
     expect(auth.checkCredentials(undefined, "vera2026")).toBe(false);
-    expect(auth.checkCredentials("demo@verafund.app", undefined)).toBe(false);
+    expect(auth.checkCredentials("alex@verafund.app", undefined)).toBe(false);
     expect(auth.checkCredentials(42, 42)).toBe(false);
   });
 
@@ -75,7 +75,7 @@ describe("checkCredentials", () => {
     vi.resetModules();
     const custom = await import("./auth");
     expect(custom.checkCredentials("judge@example.com", "s3cret-pass")).toBe(true);
-    expect(custom.checkCredentials("demo@verafund.app", "vera2026")).toBe(false);
+    expect(custom.checkCredentials("alex@verafund.app", "vera2026")).toBe(false);
   });
 });
 

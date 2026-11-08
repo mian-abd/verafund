@@ -20,13 +20,6 @@ export default async function LogInPage({ searchParams }: { searchParams: Promis
 
         {error && <AuthError message={error} />}
 
-        <p
-          data-testid="demo-login-hint"
-          className="mt-5 rounded-xl border border-primary/30 bg-warm px-4 py-3 text-sm text-foreground"
-        >
-          {`Demo login: ${DEMO_EMAIL} · ${DEMO_PASSWORD}`}
-        </p>
-
         <form action={logInAction} data-testid="login-form" className="mt-5 space-y-4">
           <Field
             id="email"
