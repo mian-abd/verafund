@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
-import { startDemo } from "@/app/actions";
-import { SubmitButton } from "@/components/ui";
 
 const HeroSection = ({ error, expired }: { error?: string; expired?: boolean }) => {
-  const message = error ?? (expired ? "Your session expired. Log in or try a demo account." : null);
+  const message = error ?? (expired ? "Your session expired. Log in again." : null);
 
   return (
     <section className="relative min-h-screen overflow-hidden pt-24 pb-0">
@@ -60,14 +58,6 @@ const HeroSection = ({ error, expired }: { error?: string; expired?: boolean }) 
               Log in
             </Link>
           </div>
-
-          {/* No sign-up needed: a real <button> in a <form> that opens a fresh sample workspace. */}
-          <form action={startDemo} className="flex flex-col items-center gap-2">
-            <SubmitButton variant="outline" pendingText="Setting up your demo…" className="px-5 py-2.5" data-testid="try-demo">
-              Try a demo account
-            </SubmitButton>
-            <p className="text-xs text-muted-foreground">No sign-up needed. Sample data and sandbox cards.</p>
-          </form>
         </div>
 
         <div className="flex items-center justify-between w-full max-w-4xl mb-4 gap-4 animate-rise" style={{ animationDelay: "0.4s" }}

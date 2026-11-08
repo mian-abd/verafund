@@ -17,7 +17,7 @@ function Icon() {
   );
 }
 
-async function Results({ notice }: { notice?: string }) {
+async function Results() {
   const workspaceId = await getWorkspaceId();
   if (!workspaceId) return null;
 
@@ -46,15 +46,6 @@ async function Results({ notice }: { notice?: string }) {
 
   return (
     <div className="space-y-4">
-      {notice && (
-        <div
-          role="status"
-          data-testid="discovery-notice"
-          className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success"
-        >
-          {notice}
-        </div>
-      )}
       {rows === null ? (
         <p role="alert" className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           Couldn&apos;t scan your transactions right now. Hide this panel and try again.
@@ -143,8 +134,18 @@ export async function DiscoveryPanel({
           <X size={14} aria-hidden="true" /> Hide
         </Link>
       </div>
+      {/* Rendered before the scan streams in, so the confirmation is on screen right away. */}
+      {notice && (
+        <div
+          role="status"
+          data-testid="discovery-notice"
+          className="rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success"
+        >
+          {notice}
+        </div>
+      )}
       <Suspense fallback={<Scanning />}>
-        <Results notice={notice} />
+        <Results />
       </Suspense>
     </section>
   );

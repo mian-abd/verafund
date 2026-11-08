@@ -10,7 +10,7 @@ testCases:
     name: A price hike above the card limit is declined, then approved by the user
     steps:
       - go to /
-      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Log in" button in the middle of the page, then on the login page click "Log in" (the email and password are already filled in) and wait for the "Guarded subscriptions" page
       - in the Netflix section, confirm it says "limit $15.99"
       - in the Netflix section, replace the charge amount with 18.99 and click "Charge card"
       - in the Netflix section, read the last charge result
@@ -27,7 +27,7 @@ testCases:
     name: A free trial's card locks when the trial ends, so the first paid charge is declined
     steps:
       - go to /
-      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Log in" button in the middle of the page, then on the login page click "Log in" (the email and password are already filled in) and wait for the "Guarded subscriptions" page
       - click "Add subscription"
       - enter "Calm" as the merchant and 12.99 as the price, leave the billing cycle on Monthly, check "Free trial", keep the trial length at 7 days, and click "Save subscription"
       - confirm the Calm section's status starts with "Trial"
@@ -44,7 +44,7 @@ testCases:
     name: The user can keep blocking a price hike
     steps:
       - go to /
-      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Log in" button in the middle of the page, then on the login page click "Log in" (the email and password are already filled in) and wait for the "Guarded subscriptions" page
       - in the Spotify section, replace the charge amount with 14.99 and click "Charge card"
       - click "Keep blocking"
       - reload the page
@@ -58,7 +58,7 @@ testCases:
     name: A paused card declines charges and a closed card stays closed
     steps:
       - go to /
-      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Log in" button in the middle of the page, then on the login page click "Log in" (the email and password are already filled in) and wait for the "Guarded subscriptions" page
       - in the Planet Fitness section click "Pause card", then click "Charge card"
       - click "Details" in the Planet Fitness section
       - 'click "I cancelled with Planet Fitness: close card", then click "Charge card"'
@@ -71,7 +71,7 @@ testCases:
     name: Subscriptions found in the transaction history can be guarded in one click
     steps:
       - go to /
-      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Log in" button in the middle of the page, then on the login page click "Log in" (the email and password are already filled in) and wait for the "Guarded subscriptions" page
       - click the "Find my subscriptions" button
       - in the list under "Subscriptions", read the Hulu and iCloud Plus rows
       - click the "Guard selected (2)" button
@@ -86,7 +86,7 @@ testCases:
     name: Vera takes an action only after the user confirms it
     steps:
       - go to /
-      - click the "Try a demo account" button in the middle of the page and wait for the "Guarded subscriptions" page
+      - click the "Log in" button in the middle of the page, then on the login page click "Log in" (the email and password are already filled in) and wait for the "Guarded subscriptions" page
       - click the "Ask Vera" button at the bottom right of the page
       - type "pause Spotify" in Vera's message box and press Enter
       - read Vera's reply, then click "Yes, do it"
